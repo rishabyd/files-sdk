@@ -340,6 +340,22 @@ describe("s3 adapter", () => {
     expect(url).toContain("k.txt");
   });
 
+  test("signedUrl forwards responseContentDisposition for forced-attachment downloads", async () => {
+    const adapter = s3({
+      bucket: "b",
+      credentials: { accessKeyId: "AKID", secretAccessKey: "SECRET" },
+      region: "us-east-1",
+    });
+    const url = await adapter.signedUrl("k.txt", {
+      expiresIn: 60,
+      responseContentDisposition: "attachment",
+    });
+    // S3 surfaces the override as `response-content-disposition` in the
+    // querystring — without this the browser would render uploaded HTML
+    // inline at the bucket's domain.
+    expect(url).toContain("response-content-disposition=attachment");
+  });
+
   test("signedUploadUrl returns method PUT with content-type header when no maxSize", async () => {
     const adapter = s3({
       bucket: "b",

@@ -363,7 +363,13 @@ export const s3 = (opts: S3AdapterOptions): S3Adapter => {
       try {
         return await getSignedUrl(
           client,
-          new GetObjectCommand({ Bucket: bucket, Key: key }),
+          new GetObjectCommand({
+            Bucket: bucket,
+            Key: key,
+            ...(signOpts.responseContentDisposition && {
+              ResponseContentDisposition: signOpts.responseContentDisposition,
+            }),
+          }),
           { expiresIn: signOpts.expiresIn }
         );
       } catch (error) {

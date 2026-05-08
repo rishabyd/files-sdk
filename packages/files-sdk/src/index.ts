@@ -58,6 +58,18 @@ export interface ListResult {
 
 export interface SignOptions {
   expiresIn: number;
+  /**
+   * Override the `Content-Disposition` header on the signed response.
+   *
+   * **Strongly recommended** for buckets that contain user-uploaded
+   * content. Without this override, the browser uses the stored
+   * Content-Type to decide whether to render or download, which means a
+   * user-uploaded `.html` (or SVG with embedded scripts) will execute
+   * inline when someone follows the signed URL — stored XSS in the
+   * trust context of your domain. Pass `"attachment"` (or
+   * `'attachment; filename="..."'`) to force a download instead.
+   */
+  responseContentDisposition?: string;
 }
 
 export interface SignUploadOptions {
