@@ -9,6 +9,7 @@ import type {
   UploadResult,
 } from "../index.js";
 import { FilesError } from "../internal/errors.js";
+import type { FilesErrorCode } from "../internal/errors.js";
 import { createStoredFile } from "../internal/stored-file.js";
 
 export interface VercelBlobAdapterOptions {
@@ -62,20 +63,45 @@ const parseCacheControlMaxAge = (header: string): number | undefined => {
   return match?.[1] ? Number(match[1]) : undefined;
 };
 
+// Prefer HTTP status codes (stable contract) over error name substrings
+// (e.g. "BlobNotFoundError"), which would silently break if @vercel/blob
+// renames its error classes upstream. Name matching is kept as a fallback
+// for environments where the underlying fetch error doesn't surface a status.
+const classifyBlobError = (
+  status: number | undefined,
+  name: string
+): FilesErrorCode => {
+  if (status === 404 || name.includes("NotFound")) {
+    return "NotFound";
+  }
+  if (
+    status === 401 ||
+    status === 403 ||
+    name.includes("Forbidden") ||
+    name.includes("Unauthorized")
+  ) {
+    return "Unauthorized";
+  }
+  if (status === 409 || status === 412 || name.includes("Precondition")) {
+    return "Conflict";
+  }
+  return "Provider";
+};
+
+const DEFAULT_BLOB_MESSAGES: Record<FilesErrorCode, string> = {
+  Conflict: "Conflict",
+  NotFound: "Not found",
+  Provider: "vercel-blob error",
+  Unauthorized: "Unauthorized",
+};
+
 const mapBlobError = (err: unknown): FilesError => {
   if (err instanceof FilesError) {
     return err;
   }
   const e = err as { name?: string; message?: string; status?: number };
-  const name = e?.name ?? "";
-  const status = e?.status;
-  if (name.includes("NotFound") || status === 404) {
-    return new FilesError("NotFound", e?.message ?? "Not found", err);
-  }
-  if (name.includes("Forbidden") || status === 401 || status === 403) {
-    return new FilesError("Unauthorized", e?.message ?? "Unauthorized", err);
-  }
-  return new FilesError("Provider", e?.message ?? "vercel-blob error", err);
+  const code = classifyBlobError(e?.status, e?.name ?? "");
+  return new FilesError(code, e?.message ?? DEFAULT_BLOB_MESSAGES[code], err);
 };
 
 export const vercelBlob = (

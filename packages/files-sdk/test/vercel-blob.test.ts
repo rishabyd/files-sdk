@@ -324,6 +324,19 @@ describe("vercel-blob adapter", () => {
     }
   });
 
+  test("upload error: status 409 maps to Conflict", async () => {
+    const files = new Files({ adapter: vercelBlob() });
+    putMock.mockImplementationOnce(() =>
+      Promise.reject(Object.assign(new Error("conflict"), { status: 409 }))
+    );
+    try {
+      await files.upload("a.txt", "x");
+      throw new Error("should have thrown");
+    } catch (error) {
+      expect((error as FilesError).code).toBe("Conflict");
+    }
+  });
+
   test("delete error: status 403 maps to Unauthorized", async () => {
     const files = new Files({ adapter: vercelBlob() });
     delMock.mockImplementationOnce(() =>
