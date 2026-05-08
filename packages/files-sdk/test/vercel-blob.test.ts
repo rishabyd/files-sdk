@@ -443,4 +443,42 @@ describe("vercel-blob adapter", () => {
       expect((error as FilesError).message).toBe("list failed");
     }
   });
+
+  test("download passes an AbortSignal so a hung CDN can't pin the call forever", async () => {
+    const seenSignals: (AbortSignal | undefined)[] = [];
+    globalThis.fetch = ((_url: string | URL | Request, init?: RequestInit) => {
+      seenSignals.push(init?.signal ?? undefined);
+      return Promise.resolve(
+        new Response("hello", {
+          headers: { "Content-Type": "text/plain" },
+          status: 200,
+        })
+      );
+    }) as typeof fetch;
+    const files = new Files({
+      adapter: vercelBlob({ downloadTimeoutMs: 1000 }),
+    });
+    await files.download("a.txt");
+    expect(seenSignals).toHaveLength(1);
+    expect(seenSignals[0]).toBeInstanceOf(AbortSignal);
+  });
+
+  test("download with downloadTimeoutMs=0 disables the AbortSignal", async () => {
+    const seenSignals: (AbortSignal | undefined)[] = [];
+    globalThis.fetch = ((_url: string | URL | Request, init?: RequestInit) => {
+      seenSignals.push(init?.signal ?? undefined);
+      return Promise.resolve(
+        new Response("hello", {
+          headers: { "Content-Type": "text/plain" },
+          status: 200,
+        })
+      );
+    }) as typeof fetch;
+    const files = new Files({
+      adapter: vercelBlob({ downloadTimeoutMs: 0 }),
+    });
+    await files.download("a.txt");
+    expect(seenSignals).toHaveLength(1);
+    expect(seenSignals[0]).toBeUndefined();
+  });
 });

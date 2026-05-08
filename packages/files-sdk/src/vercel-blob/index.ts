@@ -33,7 +33,29 @@ export interface VercelBlobAdapterOptions {
    * `allowOverwrite: false` and handle the resulting Conflict.
    */
   allowOverwrite?: boolean;
+  /**
+   * Timeout in milliseconds for public-URL fetches issued by `download()`,
+   * and by lazy bodies returned from `head()`/`list()`. A hung CDN response
+   * would otherwise leak a fetch that never resolves.
+   *
+   * Defaults to 300_000 (5 minutes). Pass `0` to disable the timeout (not
+   * recommended in server contexts — a stuck request will pin a connection
+   * until the runtime tears it down).
+   */
+  downloadTimeoutMs?: number;
 }
+
+const DEFAULT_DOWNLOAD_TIMEOUT_MS = 300_000;
+
+const fetchWithTimeout = (
+  url: string,
+  timeoutMs: number
+): Promise<Response> => {
+  if (timeoutMs <= 0) {
+    return fetch(url);
+  }
+  return fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+};
 
 export type VercelBlobClient = typeof blob;
 
@@ -117,6 +139,8 @@ export const vercelBlob = (
 
   const addRandomSuffix = opts.addRandomSuffix ?? false;
   const allowOverwrite = opts.allowOverwrite ?? true;
+  const downloadTimeoutMs =
+    opts.downloadTimeoutMs ?? DEFAULT_DOWNLOAD_TIMEOUT_MS;
 
   // BLOB_READ_WRITE_TOKEN format is `vercel_blob_rw_<storeId>_<random>`.
   // The 4th `_`-separated segment is the storeId, which is also the URL
@@ -158,7 +182,7 @@ export const vercelBlob = (
     async download(key, downloadOpts) {
       const result = await headRaw(key);
       try {
-        const res = await fetch(result.url);
+        const res = await fetchWithTimeout(result.url, downloadTimeoutMs);
         if (!res.ok) {
           throw new FilesError(
             res.status === 404 ? "NotFound" : "Provider",
@@ -199,7 +223,7 @@ export const vercelBlob = (
         },
         {
           factory: async () => {
-            const res = await fetch(result.url);
+            const res = await fetchWithTimeout(result.url, downloadTimeoutMs);
             return new Uint8Array(await res.arrayBuffer());
           },
           kind: "lazy",
@@ -225,7 +249,7 @@ export const vercelBlob = (
             },
             {
               factory: async () => {
-                const res = await fetch(b.url);
+                const res = await fetchWithTimeout(b.url, downloadTimeoutMs);
                 return new Uint8Array(await res.arrayBuffer());
               },
               kind: "lazy",
