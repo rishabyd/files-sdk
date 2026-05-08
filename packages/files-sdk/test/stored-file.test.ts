@@ -87,6 +87,57 @@ describe("createStoredFile", () => {
     expect(new TextDecoder().decode(out)).toBe("hello");
   });
 
+  test("stream kind: stream() then text() — text() reads from buffered tee branch", async () => {
+    let factoryCalls = 0;
+    const sf = createStoredFile(
+      { key: "k", size: 5, type: "text/plain" },
+      {
+        factory: () => {
+          factoryCalls += 1;
+          return new ReadableStream<Uint8Array>({
+            start(c) {
+              c.enqueue(new TextEncoder().encode("hello"));
+              c.close();
+            },
+          });
+        },
+        kind: "stream",
+      }
+    );
+    const userBranch = sf.stream();
+    const out = await collectStream(userBranch);
+    expect(new TextDecoder().decode(out)).toBe("hello");
+    // text() must NOT re-enter the (now-consumed) source factory.
+    expect(await sf.text()).toBe("hello");
+    expect(factoryCalls).toBe(1);
+  });
+
+  test("stream kind: stream() called twice — second call returns cached bytes", async () => {
+    let factoryCalls = 0;
+    const sf = createStoredFile(
+      { key: "k", size: 3, type: "text/plain" },
+      {
+        factory: () => {
+          factoryCalls += 1;
+          return new ReadableStream<Uint8Array>({
+            start(c) {
+              c.enqueue(new TextEncoder().encode("abc"));
+              c.close();
+            },
+          });
+        },
+        kind: "stream",
+      }
+    );
+    const first = sf.stream();
+    const firstOut = await collectStream(first);
+    expect(new TextDecoder().decode(firstOut)).toBe("abc");
+    const second = sf.stream();
+    const secondOut = await collectStream(second);
+    expect(new TextDecoder().decode(secondOut)).toBe("abc");
+    expect(factoryCalls).toBe(1);
+  });
+
   test("stream kind: text() drains and caches; subsequent stream() uses cache", async () => {
     const sf = createStoredFile(
       { key: "k", size: 5, type: "text/plain" },
