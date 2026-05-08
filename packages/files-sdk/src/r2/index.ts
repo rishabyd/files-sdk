@@ -120,11 +120,34 @@ const r2ObjectToStoredFile = (
   });
 };
 
+// R2 binding errors throw with `name` (string) and `code` (number) fields.
+// See https://developers.cloudflare.com/r2/api/workers/workers-api-reference/
+// for the published code list. We classify the common ones; unknowns fall
+// through to "Provider" so callers can still distinguish failures from success.
 const mapR2Error = (err: unknown): FilesError => {
   if (err instanceof FilesError) {
     return err;
   }
-  const message = err instanceof Error ? err.message : String(err);
+  const e = err as { name?: string; code?: number; message?: string };
+  const name = e?.name ?? "";
+  const code = e?.code;
+  const message =
+    e?.message ?? (err instanceof Error ? err.message : String(err));
+
+  if (name.includes("NotFound") || name.includes("NoSuch") || code === 10_002) {
+    return new FilesError("NotFound", message, err);
+  }
+  if (name.includes("Precondition") || code === 10_007) {
+    return new FilesError("Conflict", message, err);
+  }
+  if (
+    name.includes("Forbidden") ||
+    name.includes("Unauthorized") ||
+    code === 10_004 ||
+    code === 10_006
+  ) {
+    return new FilesError("Unauthorized", message, err);
+  }
   return new FilesError("Provider", message, err);
 };
 
@@ -152,17 +175,31 @@ const r2FromBinding = (opts: R2BindingOptions): R2Adapter => {
       }
     },
     async delete(key) {
-      await bucket.delete(key);
+      try {
+        await bucket.delete(key);
+      } catch (error) {
+        throw mapR2Error(error);
+      }
     },
     async download(key, downloadOpts) {
-      const obj = await bucket.get(key);
+      let obj: Awaited<ReturnType<typeof bucket.get>>;
+      try {
+        obj = await bucket.get(key);
+      } catch (error) {
+        throw mapR2Error(error);
+      }
       if (!obj) {
         throw new FilesError("NotFound", `Object not found: ${key}`);
       }
       return r2ObjectToStoredFile(obj, downloadOpts);
     },
     async head(key) {
-      const obj = await bucket.head(key);
+      let obj: Awaited<ReturnType<typeof bucket.head>>;
+      try {
+        obj = await bucket.head(key);
+      } catch (error) {
+        throw mapR2Error(error);
+      }
       if (!obj) {
         throw new FilesError("NotFound", `Object not found: ${key}`);
       }
@@ -175,11 +212,16 @@ const r2FromBinding = (opts: R2BindingOptions): R2Adapter => {
       });
     },
     async list(options) {
-      const result = await bucket.list({
-        ...(options?.prefix && { prefix: options.prefix }),
-        ...(options?.limit !== undefined && { limit: options.limit }),
-        ...(options?.cursor && { cursor: options.cursor }),
-      });
+      let result: Awaited<ReturnType<typeof bucket.list>>;
+      try {
+        result = await bucket.list({
+          ...(options?.prefix && { prefix: options.prefix }),
+          ...(options?.limit !== undefined && { limit: options.limit }),
+          ...(options?.cursor && { cursor: options.cursor }),
+        });
+      } catch (error) {
+        throw mapR2Error(error);
+      }
       const items: StoredFile[] = result.objects.map((obj) =>
         createStoredFile(
           {

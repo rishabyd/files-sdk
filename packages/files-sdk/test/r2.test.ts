@@ -462,4 +462,71 @@ describe("r2 adapter — Workers binding path", () => {
       expect((error as FilesError).code).toBe("NotFound");
     }
   });
+
+  test("mapR2Error classifies R2 binding error codes", async () => {
+    const { bucket } = fakeBinding();
+    const files = new Files({ adapter: r2({ binding: bucket as never }) });
+    bucket.delete = (() =>
+      Promise.reject(
+        Object.assign(new Error("auth bad"), {
+          code: 10_004,
+          name: "R2Error",
+        })
+      )) as never;
+    try {
+      await files.delete("a.txt");
+      throw new Error("should have thrown");
+    } catch (error) {
+      expect((error as FilesError).code).toBe("Unauthorized");
+    }
+  });
+
+  test("mapR2Error: precondition code 10007 maps to Conflict", async () => {
+    const { bucket } = fakeBinding();
+    const files = new Files({ adapter: r2({ binding: bucket as never }) });
+    bucket.put = (() =>
+      Promise.reject(
+        Object.assign(new Error("precondition failed"), {
+          code: 10_007,
+          name: "R2Error",
+        })
+      )) as never;
+    try {
+      await files.upload("a.txt", "x");
+      throw new Error("should have thrown");
+    } catch (error) {
+      expect((error as FilesError).code).toBe("Conflict");
+    }
+  });
+
+  test("mapR2Error: name NotFound maps to NotFound (e.g. propagated by put)", async () => {
+    const { bucket } = fakeBinding();
+    const files = new Files({ adapter: r2({ binding: bucket as never }) });
+    bucket.list = (() =>
+      Promise.reject(
+        Object.assign(new Error("missing"), { name: "R2NotFoundError" })
+      )) as never;
+    try {
+      await files.list();
+      throw new Error("should have thrown");
+    } catch (error) {
+      expect((error as FilesError).code).toBe("NotFound");
+    }
+  });
+
+  test("binding download wraps non-null get() errors via mapR2Error", async () => {
+    const { bucket } = fakeBinding();
+    const files = new Files({ adapter: r2({ binding: bucket as never }) });
+    bucket.get = (() =>
+      Promise.reject(
+        Object.assign(new Error("internal"), { code: 10_000, name: "R2Error" })
+      )) as never;
+    try {
+      await files.download("a.txt");
+      throw new Error("should have thrown");
+    } catch (error) {
+      expect((error as FilesError).code).toBe("Provider");
+      expect((error as FilesError).message).toBe("internal");
+    }
+  });
 });
