@@ -32,6 +32,13 @@ export interface S3AdapterOptions {
     secretAccessKey: string;
     sessionToken?: string;
   };
+  /**
+   * Override the fallback message used when an unknown error has no
+   * `message` of its own. Internal — set by the r2-http adapter so its
+   * users see "R2 error" instead of "S3 error".
+   * @internal
+   */
+  defaultProviderMessage?: string;
 }
 
 export type S3Adapter = Adapter<S3Client> & {
@@ -131,14 +138,21 @@ const classifyS3Error = (
   return "Provider";
 };
 
-const DEFAULT_S3_MESSAGES: Record<FilesErrorCode, string> = {
+const defaultMessages = (
+  providerLabel: string
+): Record<FilesErrorCode, string> => ({
   Conflict: "Conflict",
   NotFound: "Not found",
-  Provider: "S3 error",
+  Provider: providerLabel,
   Unauthorized: "Unauthorized",
-};
+});
 
-export const mapS3Error = (err: unknown): FilesError => {
+const DEFAULT_S3_MESSAGES = defaultMessages("S3 error");
+
+export const mapS3Error = (
+  err: unknown,
+  messages: Record<FilesErrorCode, string> = DEFAULT_S3_MESSAGES
+): FilesError => {
   if (err instanceof FilesError) {
     return err;
   }
@@ -152,7 +166,7 @@ export const mapS3Error = (err: unknown): FilesError => {
     e?.name ?? e?.Code,
     e?.$metadata?.httpStatusCode
   );
-  return new FilesError(code, e?.message ?? DEFAULT_S3_MESSAGES[code], err);
+  return new FilesError(code, e?.message ?? messages[code], err);
 };
 
 export const s3 = (opts: S3AdapterOptions): S3Adapter => {
@@ -176,6 +190,10 @@ export const s3 = (opts: S3AdapterOptions): S3Adapter => {
 
   const client = new S3Client(config);
   const { bucket } = opts;
+  const messages = opts.defaultProviderMessage
+    ? defaultMessages(opts.defaultProviderMessage)
+    : DEFAULT_S3_MESSAGES;
+  const wrapErr = (err: unknown): FilesError => mapS3Error(err, messages);
 
   return {
     bucket,
@@ -195,7 +213,7 @@ export const s3 = (opts: S3AdapterOptions): S3Adapter => {
           })
         );
       } catch (error) {
-        throw mapS3Error(error);
+        throw wrapErr(error);
       }
     },
     async delete(key) {
@@ -204,7 +222,7 @@ export const s3 = (opts: S3AdapterOptions): S3Adapter => {
           new DeleteObjectCommand({ Bucket: bucket, Key: key })
         );
       } catch (error) {
-        throw mapS3Error(error);
+        throw wrapErr(error);
       }
     },
     async download(key, downloadOpts) {
@@ -240,7 +258,7 @@ export const s3 = (opts: S3AdapterOptions): S3Adapter => {
           { data: bytes, kind: "buffer" }
         );
       } catch (error) {
-        throw mapS3Error(error);
+        throw wrapErr(error);
       }
     },
     async head(key) {
@@ -270,7 +288,7 @@ export const s3 = (opts: S3AdapterOptions): S3Adapter => {
           }
         );
       } catch (error) {
-        throw mapS3Error(error);
+        throw wrapErr(error);
       }
     },
     async list(options) {
@@ -311,7 +329,7 @@ export const s3 = (opts: S3AdapterOptions): S3Adapter => {
           items,
         };
       } catch (error) {
-        throw mapS3Error(error);
+        throw wrapErr(error);
       }
     },
     name: "s3",
@@ -357,7 +375,7 @@ export const s3 = (opts: S3AdapterOptions): S3Adapter => {
           url,
         };
       } catch (error) {
-        throw mapS3Error(error);
+        throw wrapErr(error);
       }
     },
     async signedUrl(key, signOpts) {
@@ -374,7 +392,7 @@ export const s3 = (opts: S3AdapterOptions): S3Adapter => {
           { expiresIn: signOpts.expiresIn }
         );
       } catch (error) {
-        throw mapS3Error(error);
+        throw wrapErr(error);
       }
     },
     async upload(key, body, options) {
@@ -422,7 +440,7 @@ export const s3 = (opts: S3AdapterOptions): S3Adapter => {
           size,
         } satisfies UploadResult;
       } catch (error) {
-        throw mapS3Error(error);
+        throw wrapErr(error);
       }
     },
     url(_key) {

@@ -326,6 +326,9 @@ const r2FromHttp = (opts: R2HttpOptions): R2Adapter => {
   const inner = s3({
     bucket: opts.bucket,
     credentials: { accessKeyId, secretAccessKey },
+    // R2 over HTTP uses the s3 adapter under the hood; relabel the default
+    // provider message so users don't see "S3 error" from their R2 adapter.
+    defaultProviderMessage: "R2 error",
     endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
     forcePathStyle: true,
     region: "auto",

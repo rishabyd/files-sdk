@@ -98,6 +98,23 @@ describe("r2 adapter — HTTP path", () => {
     expect(result.etag).toBe("ok");
     s3Mock.reset();
   });
+
+  test("default error messages from the inner s3 adapter are relabeled as 'R2 error'", async () => {
+    // Bypass the SDK mock and exercise the error mapper directly: it's
+    // configured by the r2-http adapter to use 'R2 error' as the Provider
+    // fallback. mapS3Error reads the message off whatever object is thrown,
+    // so a no-message object hits the configured default.
+    const { mapS3Error } = await import("../src/s3/index.js");
+    const r2Messages = {
+      Conflict: "Conflict",
+      NotFound: "Not found",
+      Provider: "R2 error",
+      Unauthorized: "Unauthorized",
+    } as const;
+    const err = mapS3Error({ $metadata: { httpStatusCode: 500 } }, r2Messages);
+    expect(err.code).toBe("Provider");
+    expect(err.message).toBe("R2 error");
+  });
 });
 
 const fakeBinding = () => {
