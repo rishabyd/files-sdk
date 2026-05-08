@@ -32,6 +32,18 @@ import { vercelBlob } from "files-sdk/vercel-blob";
 // BLOB_READ_WRITE_TOKEN is auto-injected on Vercel.
 const files = new Files({ adapter: vercelBlob() });`;
 
+const MINIO_EXAMPLE = `import { Files } from "files-sdk";
+import { minio } from "files-sdk/minio";
+
+const files = new Files({
+  adapter: minio({
+    bucket: "uploads",
+    endpoint: "http://localhost:9000",
+    // accessKeyId / secretAccessKey auto-loaded from
+    // MINIO_ACCESS_KEY_ID / MINIO_SECRET_ACCESS_KEY
+  }),
+});`;
+
 export const Adapters = () => (
   <section>
     <Heading as="h2">Adapters</Heading>
@@ -48,6 +60,7 @@ export const Adapters = () => (
         <TabsTrigger value="s3">S3</TabsTrigger>
         <TabsTrigger value="r2">R2</TabsTrigger>
         <TabsTrigger value="vercel-blob">Vercel Blob</TabsTrigger>
+        <TabsTrigger value="minio">MinIO</TabsTrigger>
       </TabsList>
 
       <TabsContent className="flex flex-col gap-4" value="s3">
@@ -106,6 +119,45 @@ export const Adapters = () => (
           <code>handleUpload()</code> from <code>@vercel/blob/client</code>{" "}
           instead of presigned URLs. User <code>metadata</code> isn't supported
           by the underlying API, so it round-trips as <code>undefined</code>.
+        </p>
+      </TabsContent>
+
+      <TabsContent className="flex flex-col gap-4" value="minio">
+        <p>
+          MinIO and other self-hosted S3-compatible servers. A thin wrapper
+          around the S3 adapter with MinIO-friendly defaults — path-style
+          addressing on, region defaulted, errors relabelled. Auto-loads from{" "}
+          <code>MINIO_ACCESS_KEY_ID</code> and{" "}
+          <code>MINIO_SECRET_ACCESS_KEY</code>.
+        </p>
+        <CodeBlock code={MINIO_EXAMPLE} lang="ts" />
+        <ul>
+          <li>
+            <code>bucket</code> — required.
+          </li>
+          <li>
+            <code>endpoint</code> — required. The MinIO server URL, e.g.{" "}
+            <code>http://localhost:9000</code>.
+          </li>
+          <li>
+            <code>accessKeyId</code> / <code>secretAccessKey</code> — required,
+            falling back to the matching env vars.
+          </li>
+          <li>
+            <code>region</code> — optional. Defaults to <code>us-east-1</code>;
+            SigV4 requires some region but MinIO ignores it for routing.
+          </li>
+          <li>
+            <code>forcePathStyle</code> — optional. Defaults to{" "}
+            <code>true</code>; flip off only if you've set up per-bucket
+            subdomain routing.
+          </li>
+        </ul>
+        <p>
+          <span className="text-foreground">Limitations.</span>{" "}
+          <code>url()</code> throws — MinIO buckets are private by default. Use{" "}
+          <code>signedUrl()</code>, or configure a public bucket policy and
+          build URLs yourself.
         </p>
       </TabsContent>
     </Tabs>

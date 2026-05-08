@@ -8,6 +8,7 @@ export default defineConfig({
     "src/s3/index.ts",
     "src/r2/index.ts",
     "src/vercel-blob/index.ts",
+    "src/minio/index.ts",
   ],
   format: ["esm"],
   sourcemap: true,

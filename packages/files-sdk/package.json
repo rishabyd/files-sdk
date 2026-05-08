@@ -28,6 +28,10 @@
     "./vercel-blob": {
       "types": "./dist/vercel-blob/index.d.ts",
       "import": "./dist/vercel-blob/index.js"
+    },
+    "./minio": {
+      "types": "./dist/minio/index.d.ts",
+      "import": "./dist/minio/index.js"
     }
   },
   "scripts": {

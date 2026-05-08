@@ -43,6 +43,23 @@ const { items } = await files.list({ prefix: "hello" });`,
     label: "Vercel Blob",
     lang: "tsx",
   },
+  {
+    code: `import { Files } from "files-sdk";
+import { minio } from "files-sdk/minio";
+
+const files = new Files({
+  adapter: minio({
+    bucket: "uploads",
+    endpoint: "http://localhost:9000",
+  }),
+});
+
+await files.upload("hello.txt", "world");
+const url = await files.signedUrl("hello.txt", { expiresIn: 60 });`,
+    id: "minio",
+    label: "MinIO",
+    lang: "tsx",
+  },
 ] as const;
 
 export const Demo = () => <CodeTabs tabs={TABS} />;

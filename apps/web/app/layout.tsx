@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   description:
-    "A unified storage SDK for object/blob backends — S3, Cloudflare R2, Vercel Blob.",
+    "A unified storage SDK for object/blob backends — S3, Cloudflare R2, Vercel Blob, MinIO.",
   title: "files-sdk",
 };
 

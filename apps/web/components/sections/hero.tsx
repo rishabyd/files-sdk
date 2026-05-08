@@ -15,8 +15,8 @@ export const Hero = () => (
     </div>
     <p className="text-muted-foreground text-balance leading-relaxed">
       A unified storage SDK for object and blob backends — S3, Cloudflare R2,
-      Vercel Blob. One small, honest API. Web-standards I/O. An escape hatch
-      when you need the native client.
+      Vercel Blob, MinIO. One small, honest API. Web-standards I/O. An escape
+      hatch when you need the native client.
     </p>
   </section>
 );
