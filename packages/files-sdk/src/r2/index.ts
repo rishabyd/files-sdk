@@ -161,7 +161,12 @@ const r2FromBinding = (opts: R2BindingOptions): R2Adapter => {
       // object — multi-GB copies would otherwise blow past the Worker's
       // memory limit. Source and destination are not atomic; concurrent
       // mutations to `from` between the get and put are not detected.
-      const obj = await bucket.get(from);
+      let obj: Awaited<ReturnType<typeof bucket.get>>;
+      try {
+        obj = await bucket.get(from);
+      } catch (error) {
+        throw mapR2Error(error);
+      }
       if (!obj) {
         throw new FilesError("NotFound", `Object not found: ${from}`);
       }

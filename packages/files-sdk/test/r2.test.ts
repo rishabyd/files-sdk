@@ -529,4 +529,23 @@ describe("r2 adapter — Workers binding path", () => {
       expect((error as FilesError).message).toBe("internal");
     }
   });
+
+  test("binding copy wraps get() errors via mapR2Error", async () => {
+    const { bucket } = fakeBinding();
+    const files = new Files({ adapter: r2({ binding: bucket as never }) });
+    bucket.get = (() =>
+      Promise.reject(
+        Object.assign(new Error("forbidden"), {
+          code: 10_004,
+          name: "Forbidden",
+        })
+      )) as never;
+    try {
+      await files.copy("a.txt", "b.txt");
+      throw new Error("should have thrown");
+    } catch (error) {
+      expect((error as FilesError).code).toBe("Unauthorized");
+      expect((error as FilesError).message).toBe("forbidden");
+    }
+  });
 });
