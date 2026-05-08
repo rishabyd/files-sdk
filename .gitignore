@@ -128,6 +128,15 @@ dist
 # Stores VSCode versions used for testing VSCode extensions
 .vscode-test
 
+# Turborepo
+.turbo/
+
+# Build artifacts
+**/dist/
+
+# Next.js build output (workspace-wide)
+**/.next/
+
 # yarn v2
 .yarn/cache
 .yarn/unplugged

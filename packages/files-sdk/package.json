@@ -1,0 +1,55 @@
+{
+  "name": "files-sdk",
+  "version": "0.0.0",
+  "description": "Unified storage SDK for object/blob backends (S3, R2, Vercel Blob).",
+  "license": "MIT",
+  "author": "Hayden Bleasel",
+  "type": "module",
+  "sideEffects": false,
+  "files": ["dist"],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./s3": {
+      "types": "./dist/s3/index.d.ts",
+      "import": "./dist/s3/index.js"
+    },
+    "./r2": {
+      "types": "./dist/r2/index.d.ts",
+      "import": "./dist/r2/index.js"
+    },
+    "./vercel-blob": {
+      "types": "./dist/vercel-blob/index.d.ts",
+      "import": "./dist/vercel-blob/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "bun test",
+    "types": "tsgo --noEmit",
+    "lint": "biome check src test",
+    "format": "biome check --write src test"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.700.0",
+    "@aws-sdk/s3-presigned-post": "^3.700.0",
+    "@aws-sdk/s3-request-presigner": "^3.700.0",
+    "@vercel/blob": "^2.3"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241218.0",
+    "@smithy/util-stream": "^4.5.25",
+    "@types/bun": "^1.1.0",
+    "@types/node": "^22.0.0",
+    "@typescript/native-preview": "^7.0.0-dev.20250101.1",
+    "aws-sdk-client-mock": "^4.1.0",
+    "tsup": "^8.3.0",
+    "typescript": "^5.6.0"
+  }
+}

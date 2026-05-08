@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "types": ["bun", "@cloudflare/workers-types"]
+  },
+  "include": ["src/**/*", "test/**/*", "tsup.config.ts"]
+}
