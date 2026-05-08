@@ -77,6 +77,14 @@ export const vercelBlob = (
   const addRandomSuffix = opts.addRandomSuffix ?? false;
   const allowOverwrite = opts.allowOverwrite ?? true;
 
+  const headRaw = async (key: string) => {
+    try {
+      return await blob.head(key, { token });
+    } catch (error) {
+      throw mapBlobError(error);
+    }
+  };
+
   return {
     async copy(from, to) {
       try {
@@ -98,38 +106,31 @@ export const vercelBlob = (
       }
     },
     async download(key, downloadOpts) {
-      const info = await this.head(key);
-      const url = info.metadata?.url ?? (info as { url?: string }).url ?? "";
+      const result = await headRaw(key);
       try {
-        const res = await fetch(url);
+        const res = await fetch(result.url);
         if (!res.ok) {
           throw new FilesError(
             res.status === 404 ? "NotFound" : "Provider",
             `vercel-blob download failed: ${res.status} ${res.statusText}`
           );
         }
+        const meta = {
+          etag: result.etag,
+          key: result.pathname,
+          lastModified: result.uploadedAt?.getTime(),
+          type: result.contentType ?? "application/octet-stream",
+        };
         if (downloadOpts?.as === "stream" && res.body) {
           const stream = res.body;
           return createStoredFile(
-            {
-              key: info.key,
-              lastModified: info.lastModified,
-              metadata: info.metadata,
-              size: info.size,
-              type: info.type,
-            },
+            { ...meta, size: result.size },
             { factory: () => stream, kind: "stream" }
           );
         }
         const bytes = new Uint8Array(await res.arrayBuffer());
         return createStoredFile(
-          {
-            key: info.key,
-            lastModified: info.lastModified,
-            metadata: info.metadata,
-            size: bytes.byteLength,
-            type: info.type,
-          },
+          { ...meta, size: bytes.byteLength },
           { data: bytes, kind: "buffer" }
         );
       } catch (error) {
@@ -137,27 +138,23 @@ export const vercelBlob = (
       }
     },
     async head(key) {
-      try {
-        const result = await blob.head(key, { token });
-        return createStoredFile(
-          {
-            key: result.pathname,
-            lastModified: result.uploadedAt?.getTime(),
-            metadata: { downloadUrl: result.downloadUrl, url: result.url },
-            size: result.size,
-            type: result.contentType ?? "application/octet-stream",
+      const result = await headRaw(key);
+      return createStoredFile(
+        {
+          etag: result.etag,
+          key: result.pathname,
+          lastModified: result.uploadedAt?.getTime(),
+          size: result.size,
+          type: result.contentType ?? "application/octet-stream",
+        },
+        {
+          factory: async () => {
+            const res = await fetch(result.url);
+            return new Uint8Array(await res.arrayBuffer());
           },
-          {
-            factory: async () => {
-              const res = await fetch(result.url);
-              return new Uint8Array(await res.arrayBuffer());
-            },
-            kind: "lazy",
-          }
-        );
-      } catch (error) {
-        throw mapBlobError(error);
-      }
+          kind: "lazy",
+        }
+      );
     },
     async list(options): Promise<ListResult> {
       try {
@@ -170,9 +167,9 @@ export const vercelBlob = (
         const items: StoredFile[] = result.blobs.map((b) =>
           createStoredFile(
             {
+              etag: b.etag,
               key: b.pathname,
               lastModified: b.uploadedAt?.getTime(),
-              metadata: { downloadUrl: b.downloadUrl, url: b.url },
               size: b.size,
               type: "application/octet-stream",
             },
@@ -236,12 +233,11 @@ export const vercelBlob = (
       }
     },
     async url(key) {
-      const info = await this.head(key);
-      const url = info.metadata?.url;
-      if (!url) {
+      const result = await headRaw(key);
+      if (!result.url) {
         throw new FilesError("Provider", "vercel-blob: missing public URL");
       }
-      return url;
+      return result.url;
     },
   };
 };

@@ -18,6 +18,7 @@ const headMock = mock((pathname: string) =>
     contentDisposition: "",
     contentType: "text/plain",
     downloadUrl: `https://blob.test/${pathname}?download=1`,
+    etag: `"etag-${pathname}"`,
     pathname,
     size: 5,
     uploadedAt: new Date(),
@@ -39,6 +40,7 @@ const listMock = mock((_opts?: unknown) =>
     blobs: [
       {
         downloadUrl: "https://blob.test/a/1.txt?download=1",
+        etag: '"etag-a/1.txt"',
         pathname: "a/1.txt",
         size: 1,
         uploadedAt: new Date(),
@@ -123,12 +125,13 @@ describe("vercel-blob adapter", () => {
     expect(o.contentType).toBe("text/plain");
   });
 
-  test("head returns metadata with url stashed in metadata", async () => {
+  test("head returns metadata without polluting it with adapter URLs", async () => {
     const files = new Files({ adapter: vercelBlob() });
     const info = await files.head("a.txt");
     expect(info.key).toBe("a.txt");
     expect(info.size).toBe(5);
-    expect(info.metadata?.url).toBe("https://blob.test/a.txt");
+    expect(info.etag).toBe('"etag-a.txt"');
+    expect(info.metadata).toBeUndefined();
   });
 
   test("delete delegates to blob.del", async () => {
@@ -224,6 +227,7 @@ describe("vercel-blob adapter", () => {
         contentDisposition: "",
         contentType: "text/plain",
         downloadUrl: `https://blob.test/missing/${pathname}?download=1`,
+        etag: "",
         pathname,
         size: 0,
         uploadedAt: new Date(),
@@ -343,6 +347,7 @@ describe("vercel-blob adapter", () => {
         contentDisposition: "",
         contentType: "text/plain",
         downloadUrl: "",
+        etag: "",
         pathname,
         size: 0,
         uploadedAt: new Date(),
