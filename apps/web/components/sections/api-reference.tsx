@@ -208,6 +208,24 @@ export const ApiReference = () => (
             presigned POST form that enforces the size via{" "}
             <code>content-length-range</code>.
           </li>
+          <li className="px-4 py-3">
+            <code>minSize</code> — number of bytes, optional.{" "}
+            <code>signedUploadUrl</code> only. Defaults to <code>1</code> when{" "}
+            <code>maxSize</code> is set, so empty uploads are rejected by the
+            POST policy. Pass <code>0</code> to allow them.
+          </li>
+          <li className="px-4 py-3">
+            <code>responseContentDisposition</code> — string, optional.{" "}
+            <code>signedUrl</code> only.{" "}
+            <span className="text-foreground">
+              Strongly recommended for buckets with user-uploaded content.
+            </span>{" "}
+            Without it, the browser uses the stored <code>Content-Type</code> to
+            decide whether to render or download — a user-uploaded{" "}
+            <code>.html</code> (or SVG with embedded scripts) will execute
+            inline at your bucket's origin. Pass <code>"attachment"</code> to
+            force a download.
+          </li>
         </ul>
       </div>
     </section>

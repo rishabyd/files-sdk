@@ -93,6 +93,13 @@ export const Adapters = () => (
         </p>
         <CodeBlock code={VERCEL_BLOB_EXAMPLE} lang="ts" />
         <p>
+          <code>downloadTimeoutMs</code> bounds the public-URL fetches issued by{" "}
+          <code>download()</code> and the lazy bodies returned from{" "}
+          <code>head()</code>/<code>list()</code>. Defaults to 5 minutes; pass{" "}
+          <code>0</code> to disable. A hung CDN response would otherwise leak a
+          fetch that never resolves.
+        </p>
+        <p>
           <span className="text-foreground">Limitations.</span>{" "}
           <code>signedUrl</code> and <code>signedUploadUrl</code> both throw —
           blob URLs are public and don't expire, and browser uploads go through{" "}
