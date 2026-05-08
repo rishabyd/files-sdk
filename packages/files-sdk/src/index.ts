@@ -125,6 +125,18 @@ export interface Adapter<Raw = unknown> {
   delete(key: string): Promise<void>;
   copy(from: string, to: string): Promise<void>;
   list(opts?: ListOptions): Promise<ListResult>;
+  /**
+   * Return a permanent public URL for `key`.
+   *
+   * **Caller is responsible for URL-encoding.** Adapters do not escape
+   * special characters in keys when building URLs (Vercel Blob's fast
+   * path embeds `key` literally into a `https://...` URL). If `key` is
+   * derived from untrusted input, callers should validate or
+   * `encodeURIComponent`-style escape segments before passing it in —
+   * a key like `"../foo"` will produce a literal `../foo` URL fragment.
+   * The bucket-internal storage layer is unaffected, but downstream URL
+   * consumers may resolve the path differently than intended.
+   */
   url(key: string): Promise<string>;
   signedUrl(key: string, opts: SignOptions): Promise<string>;
   signedUploadUrl(key: string, opts: SignUploadOptions): Promise<SignedUpload>;
@@ -209,6 +221,15 @@ export class Files<A extends Adapter = Adapter> {
     return run(() => this.#adapter.list(opts));
   }
 
+  /**
+   * Return a permanent public URL for `key`.
+   *
+   * **Caller is responsible for URL-encoding.** Adapters do not escape
+   * special characters in keys when building URLs (Vercel Blob's fast
+   * path embeds `key` literally into a `https://...` URL). If `key` is
+   * derived from untrusted input, callers should validate or escape it
+   * before passing it in.
+   */
   url(key: string): Promise<string> {
     assertValidKey(key);
     return run(() => this.#adapter.url(key));
