@@ -186,6 +186,29 @@ describe("vercel-blob adapter", () => {
     process.env.BLOB_READ_WRITE_TOKEN = "test-token";
   });
 
+  test("url falls back to head() when token format is unfamiliar (e.g. version segment added)", async () => {
+    // Hypothetical future token shape with a version prefix segment after
+    // `vercel_blob_rw_`. Old code naively grabbed split('_')[3] and would
+    // treat 'v2' as the storeId. We must fall back instead.
+    process.env.BLOB_READ_WRITE_TOKEN = "vercel_blob_rw_v2_abc123store_random";
+    const files = new Files({ adapter: vercelBlob() });
+    headMock.mockClear();
+    const url = await files.url("a.txt");
+    expect(url).toBe("https://blob.test/a.txt");
+    expect(headMock).toHaveBeenCalledTimes(1);
+    process.env.BLOB_READ_WRITE_TOKEN = "test-token";
+  });
+
+  test("url falls back to head() when token doesn't have the vercel_blob_rw_ prefix", async () => {
+    process.env.BLOB_READ_WRITE_TOKEN = "custom_token_shape_x";
+    const files = new Files({ adapter: vercelBlob() });
+    headMock.mockClear();
+    const url = await files.url("a.txt");
+    expect(url).toBe("https://blob.test/a.txt");
+    expect(headMock).toHaveBeenCalledTimes(1);
+    process.env.BLOB_READ_WRITE_TOKEN = "test-token";
+  });
+
   test("url falls back to head() when addRandomSuffix is true (pathname unknown)", async () => {
     process.env.BLOB_READ_WRITE_TOKEN = "vercel_blob_rw_abc123store_random";
     const files = new Files({

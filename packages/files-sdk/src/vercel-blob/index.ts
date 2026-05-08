@@ -143,13 +143,27 @@ export const vercelBlob = (
     opts.downloadTimeoutMs ?? DEFAULT_DOWNLOAD_TIMEOUT_MS;
 
   // BLOB_READ_WRITE_TOKEN format is `vercel_blob_rw_<storeId>_<random>`.
-  // The 4th `_`-separated segment is the storeId, which is also the URL
-  // subdomain. We use this to synthesize URLs without a round trip when the
-  // pathname is predictable (i.e. `addRandomSuffix: false`). If the token
-  // format ever changes, `storeId` will be `undefined` and `url()` falls
-  // back to a head() call automatically.
-  const tokenParts = token.split("_");
-  const storeId = tokenParts.length >= 4 ? tokenParts.at(3) : undefined;
+  // We use the storeId to synthesize public URLs without a round trip when
+  // the pathname is predictable (i.e. `addRandomSuffix: false`).
+  //
+  // Parse defensively: require the exact `vercel_blob_rw_` prefix and a
+  // segment shaped like a real storeId (alphanumeric, ≥8 chars — real ones
+  // are ~24). If Vercel ever inserts a version segment (e.g.
+  // `vercel_blob_rw_v2_<storeId>_<random>`), changes separators, or
+  // shortens the storeId, the candidate fails the shape check and we fall
+  // through to `undefined` — `url()` then does a real head() call instead
+  // of building a URL pointing at the wrong (or someone else's) store.
+  const TOKEN_PREFIX = "vercel_blob_rw_";
+  const STORE_ID_RE = /^[A-Za-z0-9]{8,}$/u;
+  let storeId: string | undefined;
+  if (token.startsWith(TOKEN_PREFIX)) {
+    const afterPrefix = token.slice(TOKEN_PREFIX.length);
+    const sep = afterPrefix.indexOf("_");
+    const candidate = sep === -1 ? afterPrefix : afterPrefix.slice(0, sep);
+    if (candidate && STORE_ID_RE.test(candidate)) {
+      storeId = candidate;
+    }
+  }
 
   const headRaw = async (key: string) => {
     try {
