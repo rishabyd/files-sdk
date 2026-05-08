@@ -20,6 +20,10 @@
     "check": "ultracite check",
     "fix": "ultracite fix"
   },
+  "dependencies": {
+    "@shikijs/langs": "^4.0.2",
+    "@shikijs/themes": "^4.0.2"
+  },
   "devDependencies": {
     "@changesets/cli": "^2.27.0",
     "husky": "^9.1.0",

@@ -121,10 +121,84 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
-  html {
-    @apply font-sans;
+
+  main {
+    @apply flex flex-col gap-12;
   }
+
+  main > section {
+    @apply flex flex-col gap-3;
+  }
+
+  main > section > section {
+    @apply flex flex-col gap-3 pt-6;
+  }
+
+  section.hero {
+    @apply gap-4;
+  }
+
+  h1,
+  h2 {
+    @apply text-base;
+  }
+
+  h3 {
+    @apply font-mono;
+    font-size: 0.8125rem;
+  }
+
+  h4 {
+    @apply font-mono uppercase tracking-wider text-muted-foreground;
+    font-size: 0.6875rem;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-medium tracking-tight text-foreground;
+  }
+
+  :is(h1, h2, h3, h4) > a {
+    @apply text-inherit no-underline border-b border-dotted inline-block transition-colors;
+  }
+
+  :is(h1, h2, h3, h4) > a:hover {
+    @apply border-muted-foreground/50;
+  }
+
+  p {
+    @apply text-pretty text-muted-foreground text-sm leading-relaxed;
+  }
+
+  section.hero > p {
+    @apply text-base text-foreground;
+  }
+
+  ul,
+  ol {
+    @apply flex text-sm leading-relaxed flex-col gap-2 pl-5 list-disc text-muted-foreground;
+  }
+
+  li::marker {
+    color: --alpha(var(--color-muted-foreground) / 40%);
+  }
+
+  :not(pre) > code {
+    @apply px-1 rounded-sm bg-muted font-mono text-foreground;
+  }
+}
+
+.dark .shiki,
+.dark .shiki span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--shiki-dark-bg) !important;
+  font-style: var(--shiki-dark-font-style) !important;
+  font-weight: var(--shiki-dark-font-weight) !important;
+  text-decoration: var(--shiki-dark-text-decoration) !important;
 }
