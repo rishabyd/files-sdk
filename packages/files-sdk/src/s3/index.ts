@@ -212,24 +212,33 @@ export const s3 = (opts: S3AdapterOptions): S3Adapter => {
         const result = await client.send(
           new GetObjectCommand({ Bucket: bucket, Key: key })
         );
-        const meta = {
+        const baseMeta = {
           etag: stripEtag(result.ETag),
           key,
           lastModified: result.LastModified?.getTime(),
           metadata: result.Metadata,
-          size: Number(result.ContentLength ?? 0),
           type: result.ContentType ?? "application/octet-stream",
         };
         if (downloadOpts?.as === "stream") {
           const stream = result.Body?.transformToWebStream();
-          return createStoredFile(meta, {
-            factory: () => stream ?? emptyStream(),
-            kind: "stream",
-          });
+          // Stream path: we trust S3's ContentLength header. Falls back to 0
+          // only if the header is missing, which is rare in practice.
+          return createStoredFile(
+            { ...baseMeta, size: Number(result.ContentLength ?? 0) },
+            {
+              factory: () => stream ?? emptyStream(),
+              kind: "stream",
+            }
+          );
         }
         const bytes =
           (await result.Body?.transformToByteArray()) ?? new Uint8Array();
-        return createStoredFile(meta, { data: bytes, kind: "buffer" });
+        // Buffer path: prefer the real byte length over ContentLength so the
+        // size we surface always matches the bytes the caller can actually read.
+        return createStoredFile(
+          { ...baseMeta, size: bytes.byteLength },
+          { data: bytes, kind: "buffer" }
+        );
       } catch (error) {
         throw mapS3Error(error);
       }
