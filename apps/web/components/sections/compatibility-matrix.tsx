@@ -1,3 +1,5 @@
+"use client";
+
 import { Check, TriangleAlert, X } from "lucide-react";
 import type { ComponentType, ReactNode } from "react";
 
