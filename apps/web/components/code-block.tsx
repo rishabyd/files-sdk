@@ -59,12 +59,12 @@ export const CodeBlock = async ({ code, lang, className }: CodeBlockProps) => {
         {result.tokens.map((row, index) => (
           <span
             className="block min-h-[1lh]"
-            // eslint-disable-next-line react/no-array-index-key -- tokens have no unique ID
+            // oxlint-disable-next-line react/no-array-index-key -- tokens have no unique ID
             key={`line-${String(index)}`}
           >
             {row.map((token, tokenIndex) => (
               <span
-                // eslint-disable-next-line react/no-array-index-key -- tokens have no unique ID
+                // oxlint-disable-next-line react/no-array-index-key -- tokens have no unique ID
                 key={`token-${String(index)}-${String(tokenIndex)}`}
                 style={{
                   backgroundColor: token.bgColor,

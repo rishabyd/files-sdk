@@ -502,7 +502,6 @@ describe("uploadthing adapter", () => {
       ];
     for (const { body } of inputs) {
       uploadFilesMock.mockClear();
-      // biome-ignore lint/nursery/noAwaitInLoop: sequential by design — verifying each body shape independently
       const out = await files.upload("a.bin", body);
       expect(out.size).toBeGreaterThan(0);
       expect(uploadFilesMock).toHaveBeenCalledTimes(1);

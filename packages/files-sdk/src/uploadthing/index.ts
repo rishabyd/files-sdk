@@ -95,7 +95,7 @@ const decodeToken = (token: string): DecodedToken => {
     json =
       typeof atob === "function"
         ? atob(token)
-        : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        : // oxlint-disable-next-line @typescript-oxlint/no-explicit-any
           (globalThis as any).Buffer.from(token, "base64").toString("utf-8");
   } catch (error) {
     throw new FilesError(
