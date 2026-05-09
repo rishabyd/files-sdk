@@ -32,6 +32,12 @@ const ADAPTERS = [
     label: "MinIO",
   },
   {
+    config: `digitaloceanSpaces({ bucket: "uploads", region: "nyc3" })`,
+    id: "digitalocean-spaces",
+    import: `import { digitaloceanSpaces } from "files-sdk/digitalocean-spaces";`,
+    label: "DigitalOcean Spaces",
+  },
+  {
     config: `storj({ bucket: "uploads" })`,
     id: "storj",
     import: `import { storj } from "files-sdk/storj";`,
@@ -75,10 +81,47 @@ const ADAPTERS = [
     label: "Azure",
   },
   {
+    config: `onedrive({
+    clientCredentials: {
+      tenantId: process.env.ONEDRIVE_TENANT_ID!,
+      clientId: process.env.ONEDRIVE_CLIENT_ID!,
+      clientSecret: process.env.ONEDRIVE_CLIENT_SECRET!,
+    },
+    driveId: process.env.ONEDRIVE_DRIVE_ID!,
+  })`,
+    id: "onedrive",
+    import: `import { onedrive } from "files-sdk/onedrive";`,
+    label: "OneDrive",
+  },
+  {
+    config: `supabase({ bucket: "uploads" })`,
+    id: "supabase",
+    import: `import { supabase } from "files-sdk/supabase";`,
+    label: "Supabase",
+  },
+  {
+    config: `dropbox({ accessToken: process.env.DROPBOX_TOKEN! })`,
+    id: "dropbox",
+    import: `import { dropbox } from "files-sdk/dropbox";`,
+    label: "Dropbox",
+  },
+  {
+    config: `box({ developerToken: process.env.BOX_TOKEN! })`,
+    id: "box",
+    import: `import { box } from "files-sdk/box";`,
+    label: "Box",
+  },
+  {
     config: `uploadthing()`,
     id: "uploadthing",
     import: `import { uploadthing } from "files-sdk/uploadthing";`,
     label: "UploadThing",
+  },
+  {
+    config: `fs({ root: "./uploads" })`,
+    id: "fs",
+    import: `import { fs } from "files-sdk/fs";`,
+    label: "Filesystem",
   },
 ] as const;
 
