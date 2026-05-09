@@ -11,14 +11,19 @@ import { Storage } from "@google-cloud/storage";
 
 import type {
   Adapter,
-  Body,
   SignedUpload,
   StoredFile,
   UploadResult,
 } from "../index.js";
+import {
+  DEFAULT_URL_EXPIRES_IN,
+  joinPublicUrl,
+  makeErrorMapper,
+  normalizeBody,
+  resolveUrlStrategy,
+} from "../internal/core.js";
 import { readEnv } from "../internal/env.js";
 import { FilesError } from "../internal/errors.js";
-import type { FilesErrorCode } from "../internal/errors.js";
 import { createStoredFile } from "../internal/stored-file.js";
 
 export interface GCSAdapterOptions {
@@ -63,118 +68,37 @@ export interface GCSAdapterOptions {
 
 export type GCSAdapter = Adapter<StorageClient> & { readonly bucket: string };
 
-const DEFAULT_URL_EXPIRES_IN = 3600;
-
 const expiresAt = (seconds: number): number => Date.now() + seconds * 1000;
 
-const NOT_FOUND_STATUS = new Set([404]);
-const UNAUTH_STATUS = new Set([401, 403]);
-const CONFLICT_STATUS = new Set([409, 412]);
-
-const classifyGCSError = (status: number | undefined): FilesErrorCode => {
-  if (NOT_FOUND_STATUS.has(status ?? 0)) {
-    return "NotFound";
-  }
-  if (UNAUTH_STATUS.has(status ?? 0)) {
-    return "Unauthorized";
-  }
-  if (CONFLICT_STATUS.has(status ?? 0)) {
-    return "Conflict";
-  }
-  return "Provider";
-};
-
-const DEFAULT_MESSAGES: Record<FilesErrorCode, string> = {
-  Conflict: "Conflict",
-  NotFound: "Not found",
-  Provider: "GCS error",
-  Unauthorized: "Unauthorized",
-};
-
-export const mapGCSError = (err: unknown): FilesError => {
-  if (err instanceof FilesError) {
-    return err;
-  }
-  const e = err as {
-    code?: number | string;
-    message?: string;
-    status?: number;
-  };
-  // GCS ApiError carries the HTTP status on `code` (number). Some auth
-  // errors and lower-level wrappers use `status` instead. String `code`
-  // values (e.g. "ENOTFOUND") fall through to Provider — we don't try to
-  // classify network errors as anything more specific.
-  let status: number | undefined;
-  if (typeof e?.code === "number") {
-    status = e.code;
-  } else if (typeof e?.status === "number") {
-    ({ status } = e);
-  }
-  const errorCode = classifyGCSError(status);
-  return new FilesError(
-    errorCode,
-    e?.message ?? DEFAULT_MESSAGES[errorCode],
-    err
-  );
-};
-
-const joinPublicUrl = (base: string, key: string): string => {
-  const trimmed = base.endsWith("/") ? base.slice(0, -1) : base;
-  return `${trimmed}/${key}`;
-};
-
-const normalizeBody = async (
-  body: Body,
-  contentTypeHint?: string
-): Promise<{
-  data: Uint8Array | ReadableStream<Uint8Array> | string;
-  contentType: string;
-  contentLength?: number;
-}> => {
-  if (typeof body === "string") {
-    return {
-      contentLength: new TextEncoder().encode(body).byteLength,
-      contentType: contentTypeHint ?? "text/plain; charset=utf-8",
-      data: body,
+export const mapGCSError = makeErrorMapper({
+  codes: {
+    conflict: new Set(),
+    notFound: new Set(),
+    unauthorized: new Set(),
+  },
+  extract: (err) => {
+    const e = err as {
+      code?: number | string;
+      message?: string;
+      status?: number;
     };
-  }
-  if (body instanceof Uint8Array) {
+    // GCS ApiError carries the HTTP status on `code` (number). Some auth
+    // errors and lower-level wrappers use `status` instead. String `code`
+    // values (e.g. "ENOTFOUND") fall through to Provider — we don't try to
+    // classify network errors as anything more specific.
+    let status: number | undefined;
+    if (typeof e?.code === "number") {
+      status = e.code;
+    } else if (typeof e?.status === "number") {
+      ({ status } = e);
+    }
     return {
-      contentLength: body.byteLength,
-      contentType: contentTypeHint ?? "application/octet-stream",
-      data: body,
+      ...(e?.message && { message: e.message }),
+      ...(status !== undefined && { status }),
     };
-  }
-  if (body instanceof ArrayBuffer) {
-    const data = new Uint8Array(body);
-    return {
-      contentLength: data.byteLength,
-      contentType: contentTypeHint ?? "application/octet-stream",
-      data,
-    };
-  }
-  if (ArrayBuffer.isView(body)) {
-    const view = body as ArrayBufferView;
-    const data = new Uint8Array(view.buffer, view.byteOffset, view.byteLength);
-    return {
-      contentLength: data.byteLength,
-      contentType: contentTypeHint ?? "application/octet-stream",
-      data,
-    };
-  }
-  if (body instanceof Blob) {
-    const buf = new Uint8Array(await body.arrayBuffer());
-    return {
-      contentLength: buf.byteLength,
-      contentType: contentTypeHint ?? body.type ?? "application/octet-stream",
-      data: buf,
-    };
-  }
-  return {
-    contentType: contentTypeHint ?? "application/octet-stream",
-    data: body,
-  };
-};
+  },
+  providerLabel: "GCS error",
+});
 
 const uint8ToBuffer = (u8: Uint8Array): Buffer =>
   Buffer.from(u8.buffer, u8.byteOffset, u8.byteLength);
@@ -395,8 +319,6 @@ export const gcs = (opts: GCSAdapterOptions): GCSAdapter => {
         if (data instanceof ReadableStream) {
           const writeStream = file.createWriteStream(writeOpts);
           await pipeWebToNode(data, writeStream);
-        } else if (typeof data === "string") {
-          await file.save(data, writeOpts);
         } else {
           await file.save(uint8ToBuffer(data), writeOpts);
         }
@@ -418,12 +340,11 @@ export const gcs = (opts: GCSAdapterOptions): GCSAdapter => {
       }
     },
     async url(key, urlOpts) {
-      // Same precedence rule as S3: `responseContentDisposition` forces
-      // signing even when `publicBaseUrl` is set, because a permanent URL
-      // can't bind a Content-Disposition override and silently dropping
-      // it would be a stored-XSS regression on user-uploaded content.
-      const wantsDisposition = Boolean(urlOpts?.responseContentDisposition);
-      if (publicBaseUrl && !wantsDisposition) {
+      const strategy = resolveUrlStrategy({
+        publicBaseUrl,
+        responseContentDisposition: urlOpts?.responseContentDisposition,
+      });
+      if (strategy === "public" && publicBaseUrl) {
         return joinPublicUrl(publicBaseUrl, key);
       }
       try {

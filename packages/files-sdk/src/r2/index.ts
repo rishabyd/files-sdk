@@ -15,6 +15,7 @@ import type {
   UploadResult,
   UrlOptions,
 } from "../index.js";
+import { DEFAULT_URL_EXPIRES_IN, joinPublicUrl } from "../internal/core.js";
 import { readEnv } from "../internal/env.js";
 import { FilesError } from "../internal/errors.js";
 import { createStoredFile } from "../internal/stored-file.js";
@@ -76,13 +77,6 @@ export interface R2BindingOptions {
 export type R2AdapterOptions = R2BindingOptions | R2HttpOptions;
 
 export type R2Adapter = Adapter<S3Client | R2Bucket>;
-
-const DEFAULT_URL_EXPIRES_IN = 3600;
-
-const joinPublicUrl = (base: string, key: string): string => {
-  const trimmed = base.endsWith("/") ? base.slice(0, -1) : base;
-  return `${trimmed}/${key}`;
-};
 
 // Lazy-load the s3 adapter via dynamic import so a binding-only Worker
 // bundle doesn't pull in @aws-sdk/client-s3 (~500KB+ minified). The

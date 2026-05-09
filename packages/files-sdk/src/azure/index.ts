@@ -11,14 +11,19 @@ import {
 
 import type {
   Adapter,
-  Body,
   SignedUpload,
   StoredFile,
   UploadResult,
 } from "../index.js";
+import {
+  DEFAULT_URL_EXPIRES_IN,
+  joinPublicUrl,
+  makeErrorMapper,
+  normalizeBody,
+  resolveUrlStrategy,
+} from "../internal/core.js";
 import { readEnv } from "../internal/env.js";
 import { FilesError } from "../internal/errors.js";
-import type { FilesErrorCode } from "../internal/errors.js";
 import { createStoredFile } from "../internal/stored-file.js";
 
 export interface AzureAdapterOptions {
@@ -82,22 +87,21 @@ export type AzureAdapter = Adapter<BlobServiceClient> & {
   readonly bucket: string;
 };
 
-const DEFAULT_URL_EXPIRES_IN = 3600;
 const COPY_SOURCE_SAS_SECONDS = 300;
 
-const NOT_FOUND_CODES = new Set([
+const AZURE_NOT_FOUND_CODES: ReadonlySet<string> = new Set([
   "BlobNotFound",
   "ContainerNotFound",
   "ResourceNotFound",
 ]);
-const UNAUTH_CODES = new Set([
+const AZURE_UNAUTH_CODES: ReadonlySet<string> = new Set([
   "AuthenticationFailed",
   "AuthorizationFailure",
   "AuthorizationPermissionMismatch",
   "InvalidAuthenticationInfo",
   "InsufficientAccountPermissions",
 ]);
-const CONFLICT_CODES = new Set([
+const AZURE_CONFLICT_CODES: ReadonlySet<string> = new Set([
   "BlobAlreadyExists",
   "ContainerAlreadyExists",
   "ConditionNotMet",
@@ -105,61 +109,34 @@ const CONFLICT_CODES = new Set([
   "LeaseAlreadyPresent",
 ]);
 
-const NOT_FOUND_STATUS = new Set([404]);
-const UNAUTH_STATUS = new Set([401, 403]);
-const CONFLICT_STATUS = new Set([409, 412]);
-
-const classifyAzureError = (
-  errorCode: string | undefined,
-  status: number | undefined
-): FilesErrorCode => {
-  if (
-    (errorCode && NOT_FOUND_CODES.has(errorCode)) ||
-    NOT_FOUND_STATUS.has(status ?? 0)
-  ) {
-    return "NotFound";
-  }
-  if (
-    (errorCode && UNAUTH_CODES.has(errorCode)) ||
-    UNAUTH_STATUS.has(status ?? 0)
-  ) {
-    return "Unauthorized";
-  }
-  if (
-    (errorCode && CONFLICT_CODES.has(errorCode)) ||
-    CONFLICT_STATUS.has(status ?? 0)
-  ) {
-    return "Conflict";
-  }
-  return "Provider";
-};
-
-const DEFAULT_MESSAGES: Record<FilesErrorCode, string> = {
-  Conflict: "Conflict",
-  NotFound: "Not found",
-  Provider: "Azure error",
-  Unauthorized: "Unauthorized",
-};
-
-export const mapAzureError = (err: unknown): FilesError => {
-  if (err instanceof FilesError) {
-    return err;
-  }
-  const e = err as {
-    statusCode?: number;
-    code?: string | number;
-    details?: { errorCode?: string };
-    message?: string;
-  };
-  // Azure RestError carries the storage error code on `details.errorCode`
-  // (the value from the response body) and the HTTP status on `statusCode`.
-  // The top-level `code` is sometimes the same string and sometimes an SDK
-  // class name, so prefer `details.errorCode` when present.
-  const errorCode =
-    e?.details?.errorCode ?? (typeof e?.code === "string" ? e.code : undefined);
-  const code = classifyAzureError(errorCode, e?.statusCode);
-  return new FilesError(code, e?.message ?? DEFAULT_MESSAGES[code], err);
-};
+export const mapAzureError = makeErrorMapper({
+  codes: {
+    conflict: AZURE_CONFLICT_CODES,
+    notFound: AZURE_NOT_FOUND_CODES,
+    unauthorized: AZURE_UNAUTH_CODES,
+  },
+  extract: (err) => {
+    const e = err as {
+      statusCode?: number;
+      code?: string | number;
+      details?: { errorCode?: string };
+      message?: string;
+    };
+    // Azure RestError carries the storage error code on `details.errorCode`
+    // (the value from the response body) and the HTTP status on `statusCode`.
+    // The top-level `code` is sometimes the same string and sometimes an SDK
+    // class name, so prefer `details.errorCode` when present.
+    const code =
+      e?.details?.errorCode ??
+      (typeof e?.code === "string" ? e.code : undefined);
+    return {
+      ...(code && { code }),
+      ...(e?.message && { message: e.message }),
+      ...(e?.statusCode !== undefined && { status: e.statusCode }),
+    };
+  },
+  providerLabel: "Azure error",
+});
 
 const stripEtag = (etag: string | undefined): string | undefined => {
   if (!etag) {
@@ -168,70 +145,11 @@ const stripEtag = (etag: string | undefined): string | undefined => {
   return etag.replaceAll(/^"+|"+$/gu, "");
 };
 
-const joinPublicUrl = (base: string, key: string): string => {
-  const trimmed = base.endsWith("/") ? base.slice(0, -1) : base;
-  return `${trimmed}/${key}`;
-};
-
 const uint8ToBuffer = (u8: Uint8Array): Buffer =>
   Buffer.from(u8.buffer, u8.byteOffset, u8.byteLength);
 
 const bufferToUint8 = (buf: Buffer): Uint8Array =>
   new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
-
-const normalizeBody = async (
-  body: Body,
-  contentTypeHint?: string
-): Promise<{
-  data: Uint8Array | ReadableStream<Uint8Array>;
-  contentType: string;
-  contentLength?: number;
-}> => {
-  if (typeof body === "string") {
-    const data = new TextEncoder().encode(body);
-    return {
-      contentLength: data.byteLength,
-      contentType: contentTypeHint ?? "text/plain; charset=utf-8",
-      data,
-    };
-  }
-  if (body instanceof Uint8Array) {
-    return {
-      contentLength: body.byteLength,
-      contentType: contentTypeHint ?? "application/octet-stream",
-      data: body,
-    };
-  }
-  if (body instanceof ArrayBuffer) {
-    const data = new Uint8Array(body);
-    return {
-      contentLength: data.byteLength,
-      contentType: contentTypeHint ?? "application/octet-stream",
-      data,
-    };
-  }
-  if (ArrayBuffer.isView(body)) {
-    const view = body as ArrayBufferView;
-    const data = new Uint8Array(view.buffer, view.byteOffset, view.byteLength);
-    return {
-      contentLength: data.byteLength,
-      contentType: contentTypeHint ?? "application/octet-stream",
-      data,
-    };
-  }
-  if (body instanceof Blob) {
-    const buf = new Uint8Array(await body.arrayBuffer());
-    return {
-      contentLength: buf.byteLength,
-      contentType: contentTypeHint ?? body.type ?? "application/octet-stream",
-      data: buf,
-    };
-  }
-  return {
-    contentType: contentTypeHint ?? "application/octet-stream",
-    data: body,
-  };
-};
 
 interface ConnectionStringParts {
   accountName?: string;
@@ -673,13 +591,11 @@ export const azure = (opts: AzureAdapterOptions): AzureAdapter => {
       }
     },
     url(key, urlOpts): Promise<string> {
-      // Same precedence rule as S3/GCS: `responseContentDisposition` forces
-      // signing even when `publicBaseUrl` is set, because a permanent CDN
-      // URL has no signature to bind the override into. Silently dropping
-      // the override would be a stored-XSS regression on user-uploaded
-      // content.
-      const wantsDisposition = Boolean(urlOpts?.responseContentDisposition);
-      if (publicBaseUrl && !wantsDisposition) {
+      const strategy = resolveUrlStrategy({
+        publicBaseUrl,
+        responseContentDisposition: urlOpts?.responseContentDisposition,
+      });
+      if (strategy === "public" && publicBaseUrl) {
         return Promise.resolve(joinPublicUrl(publicBaseUrl, key));
       }
       try {

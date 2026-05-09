@@ -8,6 +8,7 @@ import type {
   StoredFile,
   UploadResult,
 } from "../index.js";
+import { DEFAULT_URL_EXPIRES_IN } from "../internal/core.js";
 import { readEnv } from "../internal/env.js";
 import { FilesError } from "../internal/errors.js";
 import type { FilesErrorCode } from "../internal/errors.js";
@@ -65,7 +66,6 @@ export interface UploadThingAdapterOptions {
 }
 
 const DEFAULT_DOWNLOAD_TIMEOUT_MS = 300_000;
-const DEFAULT_URL_EXPIRES_IN = 3600;
 const DEFAULT_REGION = "sea1";
 
 const fetchWithTimeout = (

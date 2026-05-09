@@ -13,11 +13,17 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 import type {
   Adapter,
-  Body,
   SignedUpload,
   StoredFile,
   UploadResult,
 } from "../index.js";
+import {
+  DEFAULT_URL_EXPIRES_IN,
+  joinPublicUrl,
+  makeErrorMapper,
+  normalizeBody,
+  resolveUrlStrategy,
+} from "../internal/core.js";
 import { readEnv } from "../internal/env.js";
 import { FilesError } from "../internal/errors.js";
 import type { FilesErrorCode } from "../internal/errors.js";
@@ -64,61 +70,6 @@ export type S3Adapter = Adapter<S3Client> & {
   readonly bucket: string;
 };
 
-const normalizeBody = async (
-  body: Body,
-  contentTypeHint?: string
-): Promise<{
-  data: Uint8Array | ReadableStream<Uint8Array> | string;
-  contentType: string;
-  contentLength?: number;
-}> => {
-  if (typeof body === "string") {
-    const data = new TextEncoder().encode(body);
-    return {
-      contentLength: data.byteLength,
-      contentType: contentTypeHint ?? "text/plain; charset=utf-8",
-      data,
-    };
-  }
-  if (body instanceof Uint8Array) {
-    return {
-      contentLength: body.byteLength,
-      contentType: contentTypeHint ?? "application/octet-stream",
-      data: body,
-    };
-  }
-  if (body instanceof ArrayBuffer) {
-    const data = new Uint8Array(body);
-    return {
-      contentLength: data.byteLength,
-      contentType: contentTypeHint ?? "application/octet-stream",
-      data,
-    };
-  }
-  if (ArrayBuffer.isView(body)) {
-    const view = body as ArrayBufferView;
-    const data = new Uint8Array(view.buffer, view.byteOffset, view.byteLength);
-    return {
-      contentLength: data.byteLength,
-      contentType: contentTypeHint ?? "application/octet-stream",
-      data,
-    };
-  }
-  if (body instanceof Blob) {
-    const buf = new Uint8Array(await body.arrayBuffer());
-    return {
-      contentLength: buf.byteLength,
-      contentType: contentTypeHint ?? body.type ?? "application/octet-stream",
-      data: buf,
-    };
-  }
-  // ReadableStream
-  return {
-    contentType: contentTypeHint ?? "application/octet-stream",
-    data: body,
-  };
-};
-
 const stripEtag = (etag: string | undefined): string | undefined => {
   if (!etag) {
     return;
@@ -133,70 +84,74 @@ const emptyStream = (): ReadableStream<Uint8Array> =>
     },
   });
 
-const NOT_FOUND_CODES = new Set(["NoSuchKey", "NotFound"]);
-const NOT_FOUND_STATUS = new Set([404]);
-const UNAUTH_STATUS = new Set([401, 403]);
-const CONFLICT_STATUS = new Set([409, 412]);
+const S3_NOT_FOUND_CODES: ReadonlySet<string> = new Set([
+  "NoSuchKey",
+  "NotFound",
+]);
+const S3_UNAUTH_CODES: ReadonlySet<string> = new Set(["AccessDenied"]);
+const S3_CONFLICT_CODES: ReadonlySet<string> = new Set(["PreconditionFailed"]);
 
-const classifyS3Error = (
-  code: string | undefined,
-  status: number | undefined
-): FilesErrorCode => {
-  if (
-    (code && NOT_FOUND_CODES.has(code)) ||
-    NOT_FOUND_STATUS.has(status ?? 0)
-  ) {
-    return "NotFound";
-  }
-  if (code === "AccessDenied" || UNAUTH_STATUS.has(status ?? 0)) {
-    return "Unauthorized";
-  }
-  if (code === "PreconditionFailed" || CONFLICT_STATUS.has(status ?? 0)) {
-    return "Conflict";
-  }
-  return "Provider";
-};
-
-const defaultMessages = (
-  providerLabel: string
-): Record<FilesErrorCode, string> => ({
-  Conflict: "Conflict",
-  NotFound: "Not found",
-  Provider: providerLabel,
-  Unauthorized: "Unauthorized",
-});
-
-const DEFAULT_S3_MESSAGES = defaultMessages("S3 error");
-
-export const mapS3Error = (
-  err: unknown,
-  messages: Record<FilesErrorCode, string> = DEFAULT_S3_MESSAGES
-): FilesError => {
-  if (err instanceof FilesError) {
-    return err;
-  }
+const extractS3Error = (
+  err: unknown
+): { code?: string; status?: number; message?: string } => {
   const e = err as {
     name?: string;
     Code?: string;
     $metadata?: { httpStatusCode?: number };
     message?: string;
   };
-  const code = classifyS3Error(
-    e?.name ?? e?.Code,
-    e?.$metadata?.httpStatusCode
-  );
-  return new FilesError(code, e?.message ?? messages[code], err);
+  return {
+    ...((e?.name ?? e?.Code) ? { code: e?.name ?? e?.Code } : {}),
+    ...(e?.message && { message: e.message }),
+    ...(e?.$metadata?.httpStatusCode !== undefined && {
+      status: e.$metadata.httpStatusCode,
+    }),
+  };
 };
 
-// Default expiry for url() in seconds — 1 hour. Long enough for normal
-// browser-driven flows, short enough that an accidentally-leaked URL stops
-// working before the day is out. Overridable per adapter via
-// `defaultUrlExpiresIn` and per call via `url(key, { expiresIn })`.
-const DEFAULT_URL_EXPIRES_IN = 3600;
+const buildMapS3Error = (providerLabel = "S3 error") =>
+  makeErrorMapper({
+    codes: {
+      conflict: S3_CONFLICT_CODES,
+      notFound: S3_NOT_FOUND_CODES,
+      unauthorized: S3_UNAUTH_CODES,
+    },
+    extract: extractS3Error,
+    providerLabel,
+  });
 
-const joinPublicUrl = (base: string, key: string): string => {
-  const trimmed = base.endsWith("/") ? base.slice(0, -1) : base;
-  return `${trimmed}/${key}`;
+const _defaultMapS3Error = buildMapS3Error();
+
+/**
+ * Map an `@aws-sdk/client-s3` error (or any thrown value with the same
+ * shape) to a {@link FilesError}. The optional `messages` argument
+ * overrides the per-code fallback strings — used by the S3-compatible
+ * wrappers (R2 HTTP, MinIO, DigitalOcean Spaces, Storj, Hetzner, Akamai)
+ * so their unknown-error messages read with the right provider name.
+ */
+export const mapS3Error = (
+  err: unknown,
+  messages?: Record<FilesErrorCode, string>
+): FilesError => {
+  if (!messages) {
+    return _defaultMapS3Error(err);
+  }
+  if (err instanceof FilesError) {
+    return err;
+  }
+  // 2-arg form: the caller has provided a full per-code fallback table.
+  // Re-derive code/status, then prefer the original error's own message
+  // (so server-side reasons surface) and fall back to the caller's table.
+  const e = err as { name?: string; Code?: string; message?: string };
+  const wrapped = _defaultMapS3Error({
+    ...(typeof err === "object" && err ? err : {}),
+    message: undefined,
+  });
+  return new FilesError(
+    wrapped.code,
+    e?.message ?? messages[wrapped.code],
+    err
+  );
 };
 
 export const s3 = (opts: S3AdapterOptions): S3Adapter => {
@@ -223,10 +178,9 @@ export const s3 = (opts: S3AdapterOptions): S3Adapter => {
   const { publicBaseUrl } = opts;
   const defaultUrlExpiresIn =
     opts.defaultUrlExpiresIn ?? DEFAULT_URL_EXPIRES_IN;
-  const messages = opts.defaultProviderMessage
-    ? defaultMessages(opts.defaultProviderMessage)
-    : DEFAULT_S3_MESSAGES;
-  const wrapErr = (err: unknown): FilesError => mapS3Error(err, messages);
+  const wrapErr = opts.defaultProviderMessage
+    ? buildMapS3Error(opts.defaultProviderMessage)
+    : mapS3Error;
 
   const signGet = (
     key: string,
@@ -477,14 +431,11 @@ export const s3 = (opts: S3AdapterOptions): S3Adapter => {
       }
     },
     async url(key, urlOpts) {
-      // `responseContentDisposition` forces signing even when `publicBaseUrl`
-      // is configured — a permanent CDN URL has no signature to bind the
-      // override into, and silently dropping the override would be a
-      // security regression (uploaded HTML/SVG would render inline at the
-      // bucket's origin). The override wins; if the user wanted the CDN URL
-      // they wouldn't have asked for the disposition override.
-      const wantsDisposition = Boolean(urlOpts?.responseContentDisposition);
-      if (publicBaseUrl && !wantsDisposition) {
+      const strategy = resolveUrlStrategy({
+        publicBaseUrl,
+        responseContentDisposition: urlOpts?.responseContentDisposition,
+      });
+      if (strategy === "public" && publicBaseUrl) {
         return joinPublicUrl(publicBaseUrl, key);
       }
       try {

@@ -14,6 +14,7 @@ import type {
   StoredFile,
   UploadResult,
 } from "../index.js";
+import { DEFAULT_URL_EXPIRES_IN, joinPublicUrl } from "../internal/core.js";
 import { FilesError } from "../internal/errors.js";
 import type { FilesErrorCode } from "../internal/errors.js";
 import { createStoredFile } from "../internal/stored-file.js";
@@ -47,7 +48,6 @@ export interface FsAdapterOptions {
 
 export type FsAdapter = Adapter<{ root: string }> & { readonly root: string };
 
-const DEFAULT_URL_EXPIRES_IN = 3600;
 const SIDECAR_SUFFIX = ".meta.json";
 const ETAG_HEX_LEN = 16;
 
@@ -140,11 +140,6 @@ const defaultContentType = (body: Body, override?: string): string => {
 const sha1Etag = (bytes: Uint8Array): string => {
   const hex = createHash("sha1").update(bytes).digest("hex");
   return `"${hex.slice(0, ETAG_HEX_LEN)}"`;
-};
-
-const joinPublicUrl = (base: string, key: string): string => {
-  const trimmed = base.endsWith("/") ? base.slice(0, -1) : base;
-  return `${trimmed}/${key}`;
 };
 
 // `path.resolve` collapses `..` segments, so a key like

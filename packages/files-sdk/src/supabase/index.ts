@@ -9,9 +9,13 @@ import type {
   StoredFile,
   UploadResult,
 } from "../index.js";
+import {
+  DEFAULT_URL_EXPIRES_IN,
+  joinPublicUrl,
+  makeErrorMapper,
+} from "../internal/core.js";
 import { readEnv } from "../internal/env.js";
 import { FilesError } from "../internal/errors.js";
-import type { FilesErrorCode } from "../internal/errors.js";
 import { createStoredFile } from "../internal/stored-file.js";
 
 export interface SupabaseAdapterOptions {
@@ -74,96 +78,65 @@ export type SupabaseAdapter = Adapter<StorageClient> & {
   readonly bucket: string;
 };
 
-const DEFAULT_URL_EXPIRES_IN = 3600;
 const DEFAULT_LIST_LIMIT = 100;
 
-const NOT_FOUND_CODES = new Set(["NotFound", "NoSuchKey"]);
-const UNAUTH_CODES = new Set([
+const SUPABASE_NOT_FOUND_CODES: ReadonlySet<string> = new Set([
+  "NotFound",
+  "NoSuchKey",
+]);
+const SUPABASE_UNAUTH_CODES: ReadonlySet<string> = new Set([
   "InvalidJWT",
   "Unauthorized",
   "AccessDenied",
   "InvalidKey",
 ]);
-const CONFLICT_CODES = new Set(["Duplicate", "AlreadyExists"]);
+const SUPABASE_CONFLICT_CODES: ReadonlySet<string> = new Set([
+  "Duplicate",
+  "AlreadyExists",
+]);
 
-const NOT_FOUND_STATUS = new Set([404]);
-const UNAUTH_STATUS = new Set([401, 403]);
-const CONFLICT_STATUS = new Set([409, 412]);
+const _supabaseErrorMapper = makeErrorMapper({
+  codes: {
+    conflict: SUPABASE_CONFLICT_CODES,
+    notFound: SUPABASE_NOT_FOUND_CODES,
+    unauthorized: SUPABASE_UNAUTH_CODES,
+  },
+  extract: (err) => {
+    const e = (err ?? {}) as {
+      message?: string;
+      status?: number;
+      statusCode?: string | number;
+    };
+    // `statusCode` from StorageApiError is the server's string code (e.g.
+    // "NotFound", "Duplicate"). Fall back to `status` (HTTP) which is
+    // present on every StorageApiError and many transport errors.
+    const code = typeof e.statusCode === "string" ? e.statusCode : undefined;
+    let status: number | undefined;
+    if (typeof e.status === "number") {
+      ({ status } = e);
+    } else if (typeof e.statusCode === "number") {
+      status = e.statusCode;
+    }
+    return {
+      ...(code && { code }),
+      ...(e.message && { message: e.message }),
+      ...(status !== undefined && { status }),
+    };
+  },
+  providerLabel: "Supabase error",
+});
 
-interface SupabaseErrorLike {
-  message?: string;
-  status?: number;
-  statusCode?: string | number;
-  name?: string;
-}
-
-const classifySupabaseError = (
-  statusCode: string | undefined,
-  status: number | undefined
-): FilesErrorCode => {
-  if (
-    (statusCode && NOT_FOUND_CODES.has(statusCode)) ||
-    NOT_FOUND_STATUS.has(status ?? 0)
-  ) {
-    return "NotFound";
-  }
-  if (
-    (statusCode && UNAUTH_CODES.has(statusCode)) ||
-    UNAUTH_STATUS.has(status ?? 0)
-  ) {
-    return "Unauthorized";
-  }
-  if (
-    (statusCode && CONFLICT_CODES.has(statusCode)) ||
-    CONFLICT_STATUS.has(status ?? 0)
-  ) {
-    return "Conflict";
-  }
-  return "Provider";
-};
-
-const DEFAULT_MESSAGES: Record<FilesErrorCode, string> = {
-  Conflict: "Conflict",
-  NotFound: "Not found",
-  Provider: "Supabase error",
-  Unauthorized: "Unauthorized",
-};
-
-const extractStatus = (e: SupabaseErrorLike): number | undefined => {
-  if (typeof e.status === "number") {
-    return e.status;
-  }
-  if (typeof e.statusCode === "number") {
-    return e.statusCode;
-  }
-  return undefined;
-};
-
-export const mapSupabaseError = (err?: unknown): FilesError => {
-  if (err instanceof FilesError) {
-    return err;
-  }
-  const e = (err ?? {}) as SupabaseErrorLike;
-  // `statusCode` from StorageApiError is the server's string code (e.g.
-  // "NotFound", "Duplicate"). Fall back to `status` (HTTP) which is
-  // present on every StorageApiError and many transport errors.
-  const statusCode =
-    typeof e.statusCode === "string" ? e.statusCode : undefined;
-  const status = extractStatus(e);
-  const code = classifySupabaseError(statusCode, status);
-  return new FilesError(code, e.message ?? DEFAULT_MESSAGES[code], err);
-};
+// `mapSupabaseError(undefined)` was a documented shape (the SDK can return
+// `error: null` and a few call sites pass it straight through). Preserve
+// the optional-arg signature.
+export const mapSupabaseError = (err?: unknown): FilesError =>
+  _supabaseErrorMapper(err);
 
 const stripEtag = (etag: string | undefined): string | undefined => {
   if (!etag) {
     return;
   }
   return etag.replaceAll(/^"+|"+$/gu, "");
-};
-
-const joinPublicUrl = (base: string, key: string): string => {
-  const trimmed = base.endsWith("/") ? base.slice(0, -1) : base;
-  return `${trimmed}/${key}`;
 };
 
 const normalizeBody = async (
