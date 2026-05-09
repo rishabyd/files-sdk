@@ -4,12 +4,48 @@ import { useEffect, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
-const sections = [
+interface Section {
+  id: string;
+  label: string;
+  children?: { id: string; label: string }[];
+}
+
+const sections: Section[] = [
   { id: "why", label: "Why" },
   { id: "installation", label: "Installation" },
   { id: "quick-start", label: "Quick start" },
-  { id: "adapters", label: "Adapters" },
-  { id: "api-reference", label: "API reference" },
+  {
+    children: [
+      { id: "adapter-s3", label: "S3" },
+      { id: "adapter-r2", label: "Cloudflare R2" },
+      { id: "adapter-vercel-blob", label: "Vercel Blob" },
+      { id: "adapter-minio", label: "MinIO" },
+      { id: "adapter-digitalocean-spaces", label: "DigitalOcean Spaces" },
+      { id: "adapter-storj", label: "Storj" },
+      { id: "adapter-hetzner", label: "Hetzner" },
+      { id: "adapter-gcs", label: "Google Cloud Storage" },
+      { id: "adapter-azure", label: "Azure Blob Storage" },
+      { id: "adapter-supabase", label: "Supabase Storage" },
+      { id: "adapter-uploadthing", label: "UploadThing" },
+      { id: "adapter-fs", label: "Filesystem" },
+    ],
+    id: "adapters",
+    label: "Adapters",
+  },
+  {
+    children: [
+      { id: "files-upload", label: "upload" },
+      { id: "files-download", label: "download" },
+      { id: "files-head", label: "head" },
+      { id: "files-delete", label: "delete" },
+      { id: "files-copy", label: "copy" },
+      { id: "files-list", label: "list" },
+      { id: "files-url", label: "url" },
+      { id: "files-signed-upload-url", label: "signedUploadUrl" },
+    ],
+    id: "api-reference",
+    label: "API reference",
+  },
   { id: "the-storedfile-type", label: "The StoredFile type" },
   { id: "errors", label: "Errors" },
   { id: "escape-hatch", label: "Escape hatch" },
@@ -34,7 +70,12 @@ export const TableOfContents = () => {
       { rootMargin: "0px 0px -70% 0px", threshold: 0 }
     );
 
-    for (const { id } of sections) {
+    const ids = sections.flatMap(({ id, children }) => [
+      id,
+      ...(children?.map((child) => child.id) ?? []),
+    ]);
+
+    for (const id of ids) {
       const el = document.querySelector(`#${id}`);
       if (el) {
         observer.observe(el);
@@ -46,10 +87,15 @@ export const TableOfContents = () => {
     };
   }, []);
 
+  const activeParentId = sections.find(
+    ({ id, children }) =>
+      id === activeId || children?.some((child) => child.id === activeId)
+  )?.id;
+
   return (
     <nav aria-label="On this page">
       <ul className="flex list-none flex-col gap-0 pl-0">
-        {sections.map(({ id, label }) => (
+        {sections.map(({ id, label, children }) => (
           <li key={id}>
             <a
               href={`#${id}`}
@@ -62,6 +108,25 @@ export const TableOfContents = () => {
             >
               {label}
             </a>
+            {children && activeParentId === id ? (
+              <ul className="flex list-none flex-col gap-0 pl-0">
+                {children.map((child) => (
+                  <li key={child.id}>
+                    <a
+                      href={`#${child.id}`}
+                      className={cn(
+                        "block -ml-px border-l py-1 pl-8 text-xs leading-relaxed transition-colors",
+                        activeId === child.id
+                          ? "border-foreground text-foreground"
+                          : "border-transparent text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      {child.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </li>
         ))}
       </ul>
