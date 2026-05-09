@@ -2,10 +2,7 @@
 
 import { motion } from "motion/react";
 
-import { cn } from "@/lib/utils";
-
 import { Badge } from "../ui/badge";
-import * as icons from "./icons";
 
 const GithubMark = ({ className }: { className?: string }) => (
   <svg
@@ -23,38 +20,8 @@ const GithubMark = ({ className }: { className?: string }) => (
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-const iconList = Object.values(icons);
-
 export const Header = () => (
-  <header className="flex items-center justify-between gap-2">
-    <div className="flex items-center -space-x-0.5">
-      {iconList.map((Icon, index) => {
-        const restRotate = index % 2 === 0 ? 3 : -3;
-        return (
-          <motion.div
-            key={Icon.name}
-            initial={{ opacity: 0, rotate: 0, scale: 0.6, y: -10 }}
-            animate={{
-              opacity: 1,
-              rotate: restRotate,
-              scale: 1,
-              transition: {
-                delay: 0.05 * index,
-                duration: 0.5,
-                ease: EASE,
-              },
-              y: 0,
-            }}
-            transition={{ duration: 0.3, ease: EASE }}
-            whileHover={{ rotate: restRotate, scale: 1.05, y: -4 }}
-          >
-            <Icon
-              className={cn("size-6 rounded-sm ring-2 ring-background block")}
-            />
-          </motion.div>
-        );
-      })}
-    </div>
+  <header className="self-end">
     <motion.a
       className="text-muted-foreground transition-colors hover:text-foreground"
       href="https://github.com/haydenbleasel/files-sdk"
@@ -63,7 +30,7 @@ export const Header = () => (
       aria-label="haydenbleasel/files-sdk on GitHub"
       initial={{ opacity: 0, x: 10 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: 0.05 * iconList.length, duration: 0.5, ease: EASE }}
+      transition={{ duration: 0.5, ease: EASE }}
     >
       <span className="flex size-9 items-center justify-center rounded-full border border-dotted hover:bg-sidebar transition-colors sm:hidden">
         <GithubMark className="size-4" />
