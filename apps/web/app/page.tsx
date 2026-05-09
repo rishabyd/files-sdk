@@ -1,4 +1,5 @@
 import { Demo } from "@/components/demo";
+import { MobileTableOfContents } from "@/components/mobile-table-of-contents";
 import { Adapters } from "@/components/sections/adapters";
 import { ApiReference } from "@/components/sections/api-reference";
 import { CompatibilityMatrix } from "@/components/sections/compatibility-matrix";
@@ -21,6 +22,7 @@ export default function Home() {
         <main className="mx-auto w-full max-w-2xl border-x border-dotted px-4 sm:px-8 pt-8 pb-8">
           <Header />
           <Hero />
+          <MobileTableOfContents />
           <Demo />
           <Why />
           <Installation />

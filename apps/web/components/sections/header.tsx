@@ -18,8 +18,8 @@ const GithubMark = ({ className }: { className?: string }) => (
 );
 
 export const Header = () => (
-  <header className="flex items-center justify-between">
-    <div className="flex items-center -gap-2">
+  <header className="flex items-center justify-between gap-2">
+    <div className="flex items-center -space-x-2">
       {Object.values(icons).map((Icon, index) => (
         <Icon
           className={cn(
@@ -31,14 +31,18 @@ export const Header = () => (
       ))}
     </div>
     <a
-      className="flex items-center gap-1.5 text-muted-foreground text-xs transition-colors hover:text-foreground"
+      className="text-muted-foreground transition-colors hover:text-foreground"
       href="https://github.com/haydenbleasel/files-sdk"
       rel="noreferrer"
       target="_blank"
+      aria-label="haydenbleasel/files-sdk on GitHub"
     >
+      <span className="flex size-9 items-center justify-center rounded-full border border-dotted hover:bg-sidebar transition-colors sm:hidden">
+        <GithubMark className="size-4" />
+      </span>
       <Badge
         variant="outline"
-        className="h-auto py-2 px-4 bg-transparent hover:bg-sidebar transition-colors border-dotted"
+        className="hidden sm:inline-flex h-auto py-2 px-4 bg-transparent hover:bg-sidebar transition-colors border-dotted"
       >
         <GithubMark className="size-3.5" />
         haydenbleasel/files-sdk

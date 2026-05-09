@@ -18,16 +18,18 @@ interface CodeTabsProps {
 
 export const CodeTabs = ({ tabs, defaultValue }: CodeTabsProps) => (
   <Tabs
-    className="gap-0 overflow-hidden rounded-xl bg-sidebar"
+    className="gap-0 rounded-xl bg-sidebar"
     defaultValue={defaultValue ?? tabs[0]?.id}
   >
-    <TabsList className="bg-transparent mx-3 mt-4 -mb-2">
-      {tabs.map((tab) => (
-        <TabsTrigger key={tab.id} value={tab.id}>
-          {tab.label}
-        </TabsTrigger>
-      ))}
-    </TabsList>
+    <div className="mx-3 mt-4 -mb-2 overflow-x-auto">
+      <TabsList className="bg-transparent">
+        {tabs.map((tab) => (
+          <TabsTrigger key={tab.id} value={tab.id}>
+            {tab.label}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+    </div>
     {tabs.map((tab) => (
       <TabsContent key={tab.id} value={tab.id}>
         <CodeBlock

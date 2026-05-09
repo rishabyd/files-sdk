@@ -173,7 +173,7 @@
   }
 
   p {
-    @apply text-pretty text-muted-foreground text-sm leading-relaxed;
+    @apply text-pretty text-muted-foreground text-base leading-relaxed sm:text-sm;
   }
 
   section.hero > p {
@@ -182,7 +182,7 @@
 
   ul,
   ol {
-    @apply flex text-sm leading-relaxed flex-col gap-2 pl-5 list-disc text-muted-foreground;
+    @apply flex text-base leading-relaxed flex-col gap-2 pl-5 list-disc text-muted-foreground sm:text-sm;
   }
 
   li::marker {

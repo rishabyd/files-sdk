@@ -1,7 +1,7 @@
 export const Hero = () => (
   <section className="hero mt-16">
     <div className="flex items-center gap-3">
-      <h1 className="text-xl font-semibold tracking-tight text-foreground">
+      <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
         Files SDK
       </h1>
     </div>
