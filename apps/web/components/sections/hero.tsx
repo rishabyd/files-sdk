@@ -61,26 +61,26 @@ export const Hero = () => (
           <Tooltip key={name}>
             <TooltipTrigger asChild>
               <motion.div
-                initial={{ opacity: 0, rotate: 0, scale: 0.6, y: -10 }}
-                animate={{
-                  opacity: 1,
-                  rotate: restRotate,
-                  scale: 1,
-                  transition: {
-                    delay: 0.05 * index,
-                    duration: 0.5,
-                    ease: EASE,
-                  },
-                  y: 0,
+                initial={{ opacity: 0, scale: 0.6, y: -10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{
+                  delay: 0.05 * index,
+                  duration: 0.5,
+                  ease: EASE,
                 }}
-                transition={{ duration: 0.3, ease: EASE }}
-                whileHover={{ rotate: restRotate, scale: 1.05, y: -4 }}
               >
-                <Icon
-                  className={cn(
-                    "size-6 rounded-sm ring-2 ring-background block"
-                  )}
-                />
+                <motion.div
+                  initial={{ rotate: 0 }}
+                  animate={{ rotate: restRotate }}
+                  transition={{ duration: 0.3, ease: EASE }}
+                  whileHover={{ rotate: restRotate, scale: 1.05, y: -4 }}
+                >
+                  <Icon
+                    className={cn(
+                      "size-6 rounded-sm ring-2 ring-background block"
+                    )}
+                  />
+                </motion.div>
               </motion.div>
             </TooltipTrigger>
             <TooltipContent>{iconLabels[name]}</TooltipContent>
