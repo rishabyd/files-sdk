@@ -109,6 +109,34 @@ describe("fs adapter", () => {
       expect(result.contentType).toBe("image/png");
     });
 
+    test("ArrayBuffer body uploads with default octet-stream type", async () => {
+      const root = await makeRoot();
+      const files = new Files({ adapter: fsAdapter({ root }) });
+      const buf = new Uint8Array([1, 2, 3, 4, 5]).buffer;
+      const result = await files.upload("ab.bin", buf);
+      expect(result.size).toBe(5);
+      expect(result.contentType).toBe("application/octet-stream");
+      const got = await files.download("ab.bin");
+      expect(new Uint8Array(await got.arrayBuffer())).toEqual(
+        new Uint8Array([1, 2, 3, 4, 5])
+      );
+    });
+
+    test("ArrayBufferView (DataView) body uploads bytes verbatim", async () => {
+      const root = await makeRoot();
+      const files = new Files({ adapter: fsAdapter({ root }) });
+      const underlying = new Uint8Array([10, 20, 30, 40, 50, 60]);
+      // Slice via a view so byteOffset > 0 — verifies the adapter respects
+      // offsets when copying out of the underlying buffer.
+      const view = new DataView(underlying.buffer, 2, 3);
+      const result = await files.upload("v.bin", view);
+      expect(result.size).toBe(3);
+      const got = await files.download("v.bin");
+      expect(new Uint8Array(await got.arrayBuffer())).toEqual(
+        new Uint8Array([30, 40, 50])
+      );
+    });
+
     test("explicit contentType overrides body-derived default", async () => {
       const root = await makeRoot();
       const files = new Files({ adapter: fsAdapter({ root }) });
@@ -386,6 +414,16 @@ describe("fs adapter", () => {
       await expect(files.copy("a.txt", "../outside.txt")).rejects.toMatchObject(
         { code: "Provider" }
       );
+    });
+
+    test("rejects keys that resolve to the adapter root itself", async () => {
+      const root = await makeRoot();
+      const files = new Files({ adapter: fsAdapter({ root }) });
+      // "." resolves to the root directory — there's no body at the root,
+      // so this should be rejected before any fs operation runs.
+      await expect(files.download(".")).rejects.toMatchObject({
+        code: "Provider",
+      });
     });
   });
 

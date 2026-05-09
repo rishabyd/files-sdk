@@ -103,7 +103,11 @@ export const mapFsError = (err: unknown): FilesError => {
 
 const stringBodyEncoder = new TextEncoder();
 
-const bodyToBytes = async (body: Body): Promise<Uint8Array> => {
+// Stream bodies are handled separately by `writeStreamToTempThenRename`, so
+// this helper only sees the bytes-shaped variants.
+type NonStreamBody = Exclude<Body, ReadableStream<Uint8Array>>;
+
+const bodyToBytes = async (body: NonStreamBody): Promise<Uint8Array> => {
   if (typeof body === "string") {
     return stringBodyEncoder.encode(body);
   }
@@ -117,32 +121,7 @@ const bodyToBytes = async (body: Body): Promise<Uint8Array> => {
     const view = body as ArrayBufferView;
     return new Uint8Array(view.buffer, view.byteOffset, view.byteLength);
   }
-  if (body instanceof Blob) {
-    return new Uint8Array(await body.arrayBuffer());
-  }
-  // ReadableStream — drain into a single buffer. The adapter's stream-upload
-  // path writes through a temp file instead, so this branch only runs for
-  // small bodies passed directly as a stream by user code.
-  const reader = body.getReader();
-  const chunks: Uint8Array[] = [];
-  let total = 0;
-  while (true) {
-    const { value, done } = await reader.read();
-    if (done) {
-      break;
-    }
-    if (value) {
-      chunks.push(value);
-      total += value.byteLength;
-    }
-  }
-  const out = new Uint8Array(total);
-  let offset = 0;
-  for (const chunk of chunks) {
-    out.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  return out;
+  return new Uint8Array(await body.arrayBuffer());
 };
 
 const defaultContentType = (body: Body, override?: string): string => {

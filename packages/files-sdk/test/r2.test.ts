@@ -1,6 +1,15 @@
-import { describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { Readable } from "node:stream";
 
-import { S3Client } from "@aws-sdk/client-s3";
+import {
+  CopyObjectCommand,
+  DeleteObjectCommand,
+  GetObjectCommand,
+  HeadObjectCommand,
+  ListObjectsV2Command,
+  S3Client,
+} from "@aws-sdk/client-s3";
+import { sdkStreamMixin } from "@smithy/util-stream";
 import { mockClient } from "aws-sdk-client-mock";
 
 import { Files, FilesError } from "../src/index.js";
@@ -111,6 +120,120 @@ describe("r2 adapter — HTTP path", () => {
     const result = await files.upload("a.txt", "hi");
     expect(result.etag).toBe("ok");
     s3Mock.reset();
+  });
+
+  describe("HTTP path delegates to the lazy-loaded inner s3 adapter", () => {
+    const s3Mock = mockClient(S3Client);
+    beforeEach(() => s3Mock.reset());
+    afterEach(() => s3Mock.reset());
+
+    const makeAdapter = () =>
+      r2({
+        accessKeyId: "K",
+        accountId: "ACCT",
+        bucket: "uploads",
+        secretAccessKey: "S",
+      });
+
+    const streamBody = (text: string) =>
+      sdkStreamMixin(Readable.from(Buffer.from(text)));
+
+    test("copy issues a CopyObjectCommand against the inner s3 client", async () => {
+      s3Mock.on(CopyObjectCommand).resolves({});
+      const files = new Files({ adapter: makeAdapter() });
+      await files.copy("from.txt", "to.txt");
+      const calls = s3Mock.commandCalls(CopyObjectCommand);
+      expect(calls).toHaveLength(1);
+      const [call] = calls;
+      if (!call) {
+        throw new Error("expected one CopyObjectCommand call");
+      }
+      const [{ input }] = call.args;
+      expect(input.Bucket).toBe("uploads");
+      expect(input.Key).toBe("to.txt");
+      expect(input.CopySource).toBe("uploads/from.txt");
+    });
+
+    test("delete issues a DeleteObjectCommand", async () => {
+      s3Mock.on(DeleteObjectCommand).resolves({});
+      const files = new Files({ adapter: makeAdapter() });
+      await files.delete("a.txt");
+      const calls = s3Mock.commandCalls(DeleteObjectCommand);
+      expect(calls).toHaveLength(1);
+    });
+
+    test("download issues a GetObjectCommand and returns a StoredFile", async () => {
+      s3Mock.on(GetObjectCommand).resolves({
+        Body: streamBody("hello"),
+        ContentLength: 5,
+        ContentType: "text/plain",
+        ETag: '"abc"',
+        LastModified: new Date("2026-01-01T00:00:00Z"),
+      });
+      const files = new Files({ adapter: makeAdapter() });
+      const got = await files.download("a.txt");
+      expect(await got.text()).toBe("hello");
+      expect(got.type).toBe("text/plain");
+    });
+
+    test("head issues a HeadObjectCommand and returns metadata", async () => {
+      s3Mock.on(HeadObjectCommand).resolves({
+        ContentLength: 5,
+        ContentType: "text/plain",
+        ETag: '"abc"',
+        LastModified: new Date("2026-01-01T00:00:00Z"),
+      });
+      const files = new Files({ adapter: makeAdapter() });
+      const info = await files.head("a.txt");
+      expect(info.key).toBe("a.txt");
+      expect(info.size).toBe(5);
+      expect(info.type).toBe("text/plain");
+    });
+
+    test("list issues a ListObjectsV2Command and maps Contents to StoredFiles", async () => {
+      s3Mock.on(ListObjectsV2Command).resolves({
+        Contents: [
+          {
+            ETag: '"a"',
+            Key: "a.txt",
+            LastModified: new Date("2026-01-01T00:00:00Z"),
+            Size: 1,
+          },
+          {
+            ETag: '"b"',
+            Key: "b.txt",
+            LastModified: new Date("2026-01-01T00:00:00Z"),
+            Size: 2,
+          },
+        ],
+        IsTruncated: false,
+      });
+      const files = new Files({ adapter: makeAdapter() });
+      const out = await files.list({ prefix: "" });
+      expect(out.items.map((i) => i.key)).toEqual(["a.txt", "b.txt"]);
+    });
+
+    test("signedUploadUrl returns a presigned PUT URL", async () => {
+      const files = new Files({ adapter: makeAdapter() });
+      const out = await files.signedUploadUrl("a.txt", {
+        contentType: "text/plain",
+        expiresIn: 60,
+      });
+      expect(out.method).toBe("PUT");
+      if (out.method === "PUT") {
+        expect(out.url).toContain("X-Amz-Signature=");
+        expect(out.url).toContain("X-Amz-Expires=60");
+      }
+    });
+
+    test("raw is undefined before any method runs and resolves to the inner S3Client after", async () => {
+      const adapter = makeAdapter();
+      // The inner s3 adapter is only built on first method call.
+      expect(adapter.raw).toBeUndefined();
+      s3Mock.on(DeleteObjectCommand).resolves({});
+      await adapter.delete("touch");
+      expect(adapter.raw).toBeInstanceOf(S3Client);
+    });
   });
 
   test("default error messages from the inner s3 adapter are relabeled as 'R2 error'", async () => {
