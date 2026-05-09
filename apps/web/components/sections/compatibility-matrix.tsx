@@ -34,6 +34,8 @@ const COLUMNS = [
   { key: "gcs", label: "GCS", parent: "GCS" },
   { key: "azure", label: "Azure", parent: "Azure" },
   { key: "supabase", label: "Supabase", parent: "Supabase" },
+  { key: "ut-public", label: "public", parent: "UploadThing" },
+  { key: "ut-private", label: "private", parent: "UploadThing" },
   { key: "fs", label: "fs", parent: "Filesystem" },
 ] as const;
 
@@ -51,6 +53,8 @@ const ROWS: { method: string; cells: Record<ColumnKey, Cell> }[] = [
       "r2-hybrid": ok,
       s3: ok,
       supabase: ok,
+      "ut-private": ok,
+      "ut-public": ok,
       "vb-private": ok,
       "vb-public": ok,
     },
@@ -67,6 +71,8 @@ const ROWS: { method: string; cells: Record<ColumnKey, Cell> }[] = [
       "r2-hybrid": ok,
       s3: ok,
       supabase: ok,
+      "ut-private": ok,
+      "ut-public": ok,
       "vb-private": ok,
       "vb-public": ok,
     },
@@ -83,6 +89,8 @@ const ROWS: { method: string; cells: Record<ColumnKey, Cell> }[] = [
       "r2-hybrid": ok,
       s3: ok,
       supabase: ok,
+      "ut-private": ok,
+      "ut-public": ok,
       "vb-private": ok,
       "vb-public": ok,
     },
@@ -101,6 +109,12 @@ const ROWS: { method: string; cells: Record<ColumnKey, Cell> }[] = [
       supabase: warn(
         "Supabase's stable list API is offset/limit, not cursor-based. The adapter encodes the next offset as a numeric cursor string so the unified API works unchanged — the cursor is opaque to callers but is just `String(offset + page)` underneath."
       ),
+      "ut-private": warn(
+        "UploadThing's listFiles is offset/limit, not cursor-based — the adapter encodes the next offset as a numeric cursor. `prefix` is unsupported server-side; the adapter filters the returned page client-side, which under-returns when the prefix isn't satisfied within a single page."
+      ),
+      "ut-public": warn(
+        "UploadThing's listFiles is offset/limit, not cursor-based — the adapter encodes the next offset as a numeric cursor. `prefix` is unsupported server-side; the adapter filters the returned page client-side, which under-returns when the prefix isn't satisfied within a single page."
+      ),
       "vb-private": ok,
       "vb-public": ok,
     },
@@ -117,6 +131,12 @@ const ROWS: { method: string; cells: Record<ColumnKey, Cell> }[] = [
       "r2-hybrid": ok,
       s3: ok,
       supabase: ok,
+      "ut-private": warn(
+        "UploadThing has no metadata endpoint, so `head()` issues a HEAD request against the resolved file URL (signed for private, CDN for public) and parses size/content-type/etag/last-modified from the response headers. User `metadata` isn't supported."
+      ),
+      "ut-public": warn(
+        "UploadThing has no metadata endpoint, so `head()` issues a HEAD request against the resolved file URL (signed for private, CDN for public) and parses size/content-type/etag/last-modified from the response headers. User `metadata` isn't supported."
+      ),
       "vb-private": ok,
       "vb-public": ok,
     },
@@ -139,6 +159,12 @@ const ROWS: { method: string; cells: Record<ColumnKey, Cell> }[] = [
       ),
       s3: ok,
       supabase: ok,
+      "ut-private": warn(
+        "Read-then-write — UploadThing has no server-side copy primitive, so the source is downloaded and re-uploaded. Costs an egress + an ingest; not atomic."
+      ),
+      "ut-public": warn(
+        "Read-then-write — UploadThing has no server-side copy primitive, so the source is downloaded and re-uploaded. Costs an egress + an ingest; not atomic."
+      ),
       "vb-private": ok,
       "vb-public": ok,
     },
@@ -162,6 +188,12 @@ const ROWS: { method: string; cells: Record<ColumnKey, Cell> }[] = [
       s3: ok,
       supabase: warn(
         "Default mints a signed read URL via `createSignedUrl` (1-hour default). With `public: true`, returns the permanent unsigned `getPublicUrl` result. With `publicBaseUrl`, returns `<publicBaseUrl>/<key>`. `responseContentDisposition` is honored — it threads through Supabase's `download` option in the signed path."
+      ),
+      "ut-private": warn(
+        "Mints a signed read URL via `generateSignedURL` (1-hour default). `responseContentDisposition` throws — UploadThing has no Content-Disposition override on signed or CDN URLs."
+      ),
+      "ut-public": warn(
+        "Returns the permanent CDN URL `https://{appId}.ufs.sh/f/{key}`. `expiresIn` is silently ignored (no signing). `responseContentDisposition` throws — UploadThing has no Content-Disposition override. Use a private adapter or a different provider for buckets with untrusted user-uploaded content."
       ),
       "vb-private": no(
         "No URL primitive for private blobs — the underlying SDK requires an authenticated `blob.get()` call with the token. Use `download()` instead, or instantiate a second public-access adapter."
@@ -190,6 +222,12 @@ const ROWS: { method: string; cells: Record<ColumnKey, Cell> }[] = [
       s3: ok,
       supabase: warn(
         "PUT URL only — Supabase has no POST policy equivalent. `maxSize` throws (Supabase signed upload URLs have no `content-length-range` policy; set the bucket-level size limit in the dashboard instead). `expiresIn` is silently ignored — Supabase fixes the TTL at 2 hours server-side. The returned headers include `x-upsert: true`."
+      ),
+      "ut-private": warn(
+        "PUT URL only — built against UploadThing's UFS ingest endpoint with an HMAC-SHA256 signature over the URL. `maxSize` is advisory: UploadThing enforces upload caps via the file-router config tied to the adapter's `slug`, not via the URL signature. `minSize` is ignored (no equivalent on UFS). The user-supplied key is bound as `x-ut-custom-id` so subsequent ops can route by it."
+      ),
+      "ut-public": warn(
+        "PUT URL only — built against UploadThing's UFS ingest endpoint with an HMAC-SHA256 signature over the URL. `maxSize` is advisory: UploadThing enforces upload caps via the file-router config tied to the adapter's `slug`, not via the URL signature. `minSize` is ignored (no equivalent on UFS). The user-supplied key is bound as `x-ut-custom-id` so subsequent ops can route by it."
       ),
       "vb-private": no(
         "No presigned upload primitive. Use `handleUpload()` from `@vercel/blob/client` for browser uploads."

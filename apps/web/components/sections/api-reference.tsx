@@ -36,8 +36,8 @@ const URL_EXAMPLE = `// One call, every adapter. S3 / R2 / MinIO / GCS sign a Ge
 // default, override with { expiresIn }); Azure signs a SAS read URL with
 // the same default; Supabase signs via createSignedUrl (or returns the
 // public URL when constructed with public:true); Vercel Blob (public)
-// returns its CDN URL. If you configured \`publicBaseUrl\` on the
-// adapter, that wins and signing is skipped.
+// and UploadThing (public-read) return their CDN URLs. If you configured
+// \`publicBaseUrl\` on the adapter, that wins and signing is skipped.
 const url = await files.url("avatars/abc.png");
 const short = await files.url("avatars/abc.png", { expiresIn: 60 });
 
@@ -125,8 +125,8 @@ export const ApiReference = () => (
               <code>Record&lt;string, string&gt;</code> of arbitrary user
               metadata stored alongside the object. Returned by{" "}
               <code>head()</code> and <code>list()</code> where the provider
-              supports it. Vercel Blob has no user-metadata primitive, so it
-              round-trips as <code>undefined</code> there.
+              supports it. Vercel Blob and UploadThing have no user-metadata
+              primitive, so it round-trips as <code>undefined</code> there.
             </p>
           </PropAccordionItem>
         </Accordion>
@@ -225,13 +225,15 @@ export const ApiReference = () => (
       <p>
         Returns a URL the caller can use to fetch <code>key</code>. Every
         adapter returns the most direct URL it can produce. Signing adapters
-        (S3, R2 over HTTP, MinIO, GCS, Azure with shared key, Supabase, R2
-        binding when HTTP credentials are also configured) sign a{" "}
-        <code>GetObject</code> — defaulting to a 1-hour expiry, override
-        per-call via <code>{"{ expiresIn }"}</code> or per-adapter via{" "}
+        (S3, R2 over HTTP, MinIO, GCS, Azure with shared key, Supabase,
+        UploadThing in <code>private</code> mode, R2 binding when HTTP
+        credentials are also configured) sign a <code>GetObject</code> —
+        defaulting to a 1-hour expiry, override per-call via{" "}
+        <code>{"{ expiresIn }"}</code> or per-adapter via{" "}
         <code>defaultUrlExpiresIn</code>. If the adapter is constructed with a{" "}
-        <code>publicBaseUrl</code> (CDN, custom domain, <code>r2.dev</code>),
-        that wins and the URL is built without signing.
+        <code>publicBaseUrl</code> (CDN, custom domain, <code>r2.dev</code>) or
+        UploadThing's <code>public-read</code> ACL, that wins and the URL is
+        built without signing.
       </p>
       <p>
         Two configurations have no URL primitive and throw: Vercel Blob in{" "}
@@ -251,9 +253,11 @@ export const ApiReference = () => (
           >
             <p>
               URL expiry, in seconds. Honored on signing adapters (S3, R2 over
-              HTTP, MinIO, GCS, Azure with shared key, Supabase, R2 hybrid);
-              ignored on Vercel Blob (no signing primitive). Defaults to the
-              adapter's <code>defaultUrlExpiresIn</code> (1 hour).
+              HTTP, MinIO, GCS, Azure with shared key, Supabase, R2 hybrid,
+              UploadThing in <code>private</code> mode); ignored on Vercel Blob
+              and on UploadThing's <code>public-read</code> mode (no signing
+              primitive). Defaults to the adapter's{" "}
+              <code>defaultUrlExpiresIn</code> (1 hour).
             </p>
           </PropAccordionItem>
           <PropAccordionItem
@@ -274,8 +278,8 @@ export const ApiReference = () => (
               force a download. <strong>Forces the signing path</strong> on
               adapters that can sign (overrides <code>publicBaseUrl</code>,
               because permanent CDN URLs can't carry the override). Throws on
-              Vercel Blob (no Content-Disposition primitive) and on the R2
-              binding without HTTP credentials.
+              Vercel Blob and UploadThing (no Content-Disposition primitive on
+              either) and on the R2 binding without HTTP credentials.
             </p>
           </PropAccordionItem>
         </Accordion>
@@ -306,11 +310,14 @@ export const ApiReference = () => (
         Vercel Blob throws here — its upload model goes through{" "}
         <code>handleUpload()</code> from <code>@vercel/blob/client</code>{" "}
         instead of presigned URLs. The R2 Workers binding throws unless you've
-        configured hybrid mode (binding + HTTP credentials). Azure and Supabase
-        return PUT URLs but throw on <code>maxSize</code> — neither SAS nor
-        Supabase signed upload URLs have a <code>content-length-range</code>{" "}
-        equivalent, so enforce upload caps at your application gateway (or, on
-        Supabase, at the bucket-level setting in the dashboard).
+        configured hybrid mode (binding + HTTP credentials). Azure, Supabase,
+        and UploadThing return PUT URLs but treat <code>maxSize</code> as
+        advisory rather than enforced — Azure and Supabase have no{" "}
+        <code>content-length-range</code> equivalent (Azure throws on the
+        option, Supabase throws too), and UploadThing enforces caps via the
+        file-router config tied to the adapter's <code>slug</code> instead of
+        via the URL signature. Enforce upload caps at your application gateway
+        (or at the provider's dashboard-level bucket/route setting).
       </p>
       <CodeBlock code={SIGNED_UPLOAD_EXAMPLE} lang="ts" />
       <div className="flex flex-col gap-2">

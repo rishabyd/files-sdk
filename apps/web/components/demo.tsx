@@ -85,6 +85,19 @@ const url = await files.url("hello.txt");`,
     label: "Azure Blob",
     lang: "tsx",
   },
+  {
+    code: `import { Files } from "files-sdk";
+import { uploadthing } from "files-sdk/uploadthing";
+
+// UPLOADTHING_TOKEN is read from env.
+const files = new Files({ adapter: uploadthing() });
+
+await files.upload("hello.txt", "world");
+const url = await files.url("hello.txt");`,
+    id: "uploadthing",
+    label: "UploadThing",
+    lang: "tsx",
+  },
 ] as const;
 
 export const Demo = () => <CodeTabs tabs={TABS} />;

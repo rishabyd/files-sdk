@@ -57,6 +57,10 @@
     "./fs": {
       "types": "./dist/fs/index.d.ts",
       "import": "./dist/fs/index.js"
+    },
+    "./uploadthing": {
+      "types": "./dist/uploadthing/index.d.ts",
+      "import": "./dist/uploadthing/index.js"
     }
   },
   "scripts": {
@@ -73,7 +77,8 @@
     "@azure/storage-blob": "^12.26.0",
     "@google-cloud/storage": "^7.19.0",
     "@supabase/storage-js": "^2.105.4",
-    "@vercel/blob": "^2.3"
+    "@vercel/blob": "^2.3",
+    "uploadthing": "^7"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241218.0",
