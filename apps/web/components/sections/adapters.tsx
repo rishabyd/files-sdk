@@ -1,11 +1,7 @@
 import { CodeBlock } from "@/components/code-block";
 import { Heading } from "@/components/heading";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import { PropAccordionItem } from "@/components/prop-accordion-item";
+import { Accordion } from "@/components/ui/accordion";
 
 const S3_EXAMPLE = `import { Files } from "files-sdk";
 import { s3 } from "files-sdk/s3";
@@ -142,58 +138,49 @@ export const Adapters = () => (
           Options
         </Heading>
         <Accordion className="rounded-md border-dotted" type="multiple">
-          <AccordionItem className="border-dotted" value="bucket">
-            <AccordionTrigger>
-              <code>bucket</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>required.</p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="region">
-            <AccordionTrigger>
-              <code>region</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>
-                optional. Falls back to <code>AWS_REGION</code>.
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="credentials">
-            <AccordionTrigger>
-              <code>credentials</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>
-                optional.{" "}
-                <code>{"{ accessKeyId, secretAccessKey, sessionToken? }"}</code>
-                .
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="endpoint">
-            <AccordionTrigger>
-              <code>endpoint</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>optional. Override for S3-compatible services.</p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="publicBaseUrl">
-            <AccordionTrigger>
-              <code>publicBaseUrl</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>
-                optional. When set, <code>url()</code> returns{" "}
-                <code>{`\`\${publicBaseUrl}/\${key}\``}</code> and skips signing
-                — use this if your bucket is fronted by CloudFront or has a
-                public-read policy. When unset, <code>url()</code> returns a
-                presigned GetObject (1-hour default).
-              </p>
-            </AccordionContent>
-          </AccordionItem>
+          <PropAccordionItem name="bucket" status="required" value="bucket">
+            <p>S3 bucket name. The adapter scopes all operations to it.</p>
+          </PropAccordionItem>
+          <PropAccordionItem name="region" status="optional" value="region">
+            <p>
+              AWS region the bucket lives in (e.g. <code>us-east-1</code>).
+              Falls back to <code>AWS_REGION</code>; required if no env var is
+              set.
+            </p>
+          </PropAccordionItem>
+          <PropAccordionItem
+            name="credentials"
+            status="optional"
+            value="credentials"
+          >
+            <p>
+              Static credentials —{" "}
+              <code>{"{ accessKeyId, secretAccessKey, sessionToken? }"}</code>.
+              Skip to use the AWS credential chain (env vars, IAM role, shared
+              profile, EC2/ECS/EKS instance metadata).
+            </p>
+          </PropAccordionItem>
+          <PropAccordionItem name="endpoint" status="optional" value="endpoint">
+            <p>
+              Override the S3 service endpoint. Use this to point at
+              S3-compatible services (DigitalOcean Spaces, Wasabi, Backblaze B2,
+              LocalStack, etc.).
+            </p>
+          </PropAccordionItem>
+          <PropAccordionItem
+            name="publicBaseUrl"
+            status="optional"
+            value="publicBaseUrl"
+          >
+            <p>
+              Origin used to build URLs from <code>url()</code>. When set,{" "}
+              <code>url(key)</code> returns{" "}
+              <code>{`\`\${publicBaseUrl}/\${key}\``}</code> and skips signing —
+              use this if your bucket is fronted by CloudFront or has a
+              public-read policy. When unset, <code>url()</code> returns a
+              presigned GetObject (1-hour default).
+            </p>
+          </PropAccordionItem>
         </Accordion>
       </div>
     </section>
@@ -256,15 +243,19 @@ export const Adapters = () => (
         for private blobs, so <code>url()</code> throws. Need both? Use two
         adapters.
       </p>
-      <p>
-        <span className="text-foreground">Limitations.</span>{" "}
-        <code>signedUrl</code> and <code>signedUploadUrl</code> both throw —
-        public blob URLs don't expire, private blobs require an authenticated
-        SDK call, and browser uploads go through <code>handleUpload()</code>{" "}
-        from <code>@vercel/blob/client</code> instead of presigned URLs. User{" "}
-        <code>metadata</code> isn't supported by the underlying API, so it
-        round-trips as <code>undefined</code>.
-      </p>
+      <div className="flex flex-col gap-2">
+        <Heading as="h4" id="adapter-vercel-blob-limitations">
+          Limitations
+        </Heading>
+        <p>
+          <code>signedUrl</code> and <code>signedUploadUrl</code> both throw —
+          public blob URLs don't expire, private blobs require an authenticated
+          SDK call, and browser uploads go through <code>handleUpload()</code>{" "}
+          from <code>@vercel/blob/client</code> instead of presigned URLs. User{" "}
+          <code>metadata</code> isn't supported by the underlying API, so it
+          round-trips as <code>undefined</code>.
+        </p>
+      </div>
     </section>
 
     <section>
@@ -284,69 +275,62 @@ export const Adapters = () => (
           Options
         </Heading>
         <Accordion className="rounded-md border-dotted" type="multiple">
-          <AccordionItem className="border-dotted" value="bucket">
-            <AccordionTrigger>
-              <code>bucket</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>required.</p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="endpoint">
-            <AccordionTrigger>
-              <code>endpoint</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>
-                required. The MinIO server URL, e.g.{" "}
-                <code>http://localhost:9000</code>.
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="accessKeyId">
-            <AccordionTrigger>
-              <code>accessKeyId</code> / <code>secretAccessKey</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>required, falling back to the matching env vars.</p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="region">
-            <AccordionTrigger>
-              <code>region</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>
-                optional. Defaults to <code>us-east-1</code>; SigV4 requires
-                some region but MinIO ignores it for routing.
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="forcePathStyle">
-            <AccordionTrigger>
-              <code>forcePathStyle</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>
-                optional. Defaults to <code>true</code>; flip off only if you've
-                set up per-bucket subdomain routing.
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="publicBaseUrl">
-            <AccordionTrigger>
-              <code>publicBaseUrl</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>
-                optional. When set, <code>url()</code> returns{" "}
-                <code>{`\`\${publicBaseUrl}/\${key}\``}</code> and skips
-                signing. Use this if you've fronted MinIO with a CDN or set a
-                public bucket policy. When unset, <code>url()</code> returns a
-                presigned GetObject (1-hour default).
-              </p>
-            </AccordionContent>
-          </AccordionItem>
+          <PropAccordionItem name="bucket" status="required" value="bucket">
+            <p>MinIO bucket name. The adapter scopes all operations to it.</p>
+          </PropAccordionItem>
+          <PropAccordionItem name="endpoint" status="required" value="endpoint">
+            <p>
+              MinIO server URL, e.g. <code>http://localhost:9000</code>. Include
+              the scheme — <code>http://</code> for local dev,{" "}
+              <code>https://</code> in production.
+            </p>
+          </PropAccordionItem>
+          <PropAccordionItem
+            name="accessKeyId / secretAccessKey"
+            status="required"
+            value="accessKeyId"
+          >
+            <p>
+              Static credentials. Falls back to <code>MINIO_ACCESS_KEY_ID</code>{" "}
+              and <code>MINIO_SECRET_ACCESS_KEY</code>; required if those env
+              vars aren't set.
+            </p>
+          </PropAccordionItem>
+          <PropAccordionItem name="region" status="optional" value="region">
+            <p>
+              SigV4 region used for signing. Defaults to <code>us-east-1</code>.
+              SigV4 requires some region in the signature, but MinIO ignores it
+              for routing — leave the default unless you've configured
+              per-region buckets.
+            </p>
+          </PropAccordionItem>
+          <PropAccordionItem
+            name="forcePathStyle"
+            status="optional"
+            value="forcePathStyle"
+          >
+            <p>
+              Use path-style addressing (
+              <code>/&lt;bucket&gt;/&lt;key&gt;</code>) rather than
+              virtual-hosted style. Defaults to <code>true</code> for MinIO;
+              flip off only if you've set up per-bucket subdomain routing in
+              front of your server.
+            </p>
+          </PropAccordionItem>
+          <PropAccordionItem
+            name="publicBaseUrl"
+            status="optional"
+            value="publicBaseUrl"
+          >
+            <p>
+              Origin used to build URLs from <code>url()</code>. When set,{" "}
+              <code>url(key)</code> returns{" "}
+              <code>{`\`\${publicBaseUrl}/\${key}\``}</code> and skips signing.
+              Use this if you've fronted MinIO with a CDN or set a public bucket
+              policy. When unset, <code>url()</code> returns a presigned
+              GetObject (1-hour default).
+            </p>
+          </PropAccordionItem>
         </Accordion>
       </div>
     </section>
@@ -366,69 +350,62 @@ export const Adapters = () => (
           Options
         </Heading>
         <Accordion className="rounded-md border-dotted" type="multiple">
-          <AccordionItem className="border-dotted" value="bucket">
-            <AccordionTrigger>
-              <code>bucket</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>required.</p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="projectId">
-            <AccordionTrigger>
-              <code>projectId</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>
-                optional. Falls back to <code>GOOGLE_CLOUD_PROJECT</code> then{" "}
-                <code>GCLOUD_PROJECT</code>. ADC carries a project ID, so this
-                is rarely needed.
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="keyFilename">
-            <AccordionTrigger>
-              <code>keyFilename</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>
-                optional. Path to a service-account JSON file. Use this when ADC
-                isn't available.
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="credentials">
-            <AccordionTrigger>
-              <code>credentials</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>
-                optional. <code>{"{ client_email, private_key }"}</code>. Useful
-                when you only have those fields as separate env vars and don't
-                want to materialize a JSON file. <code>url()</code> and{" "}
-                <code>signedUploadUrl()</code> need either inline credentials or
-                the <code>iam.serviceAccounts.signBlob</code> permission on the
-                runtime service account so the SDK can fall back to IAM
-                SignBlob.
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="publicBaseUrl">
-            <AccordionTrigger>
-              <code>publicBaseUrl</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>
-                optional. When set, <code>url()</code> returns{" "}
-                <code>{`\`\${publicBaseUrl}/\${key}\``}</code> and skips
-                signing. For a public GCS bucket the natural value is{" "}
-                <code>https://storage.googleapis.com/&lt;bucket&gt;</code>; or
-                point at a Cloud CDN / load balancer host. When unset,{" "}
-                <code>url()</code> returns a V4 signed read URL (1-hour default;
-                GCS caps V4 at 7 days).
-              </p>
-            </AccordionContent>
-          </AccordionItem>
+          <PropAccordionItem name="bucket" status="required" value="bucket">
+            <p>GCS bucket name. The adapter scopes all operations to it.</p>
+          </PropAccordionItem>
+          <PropAccordionItem
+            name="projectId"
+            status="optional"
+            value="projectId"
+          >
+            <p>
+              GCP project ID. Falls back to <code>GOOGLE_CLOUD_PROJECT</code>{" "}
+              then <code>GCLOUD_PROJECT</code>. Application Default Credentials
+              carry a project ID, so this is rarely needed.
+            </p>
+          </PropAccordionItem>
+          <PropAccordionItem
+            name="keyFilename"
+            status="optional"
+            value="keyFilename"
+          >
+            <p>
+              Path to a service-account JSON file. Takes precedence over ADC
+              when set. Use this when ADC isn't available — typically outside
+              GCP runtimes.
+            </p>
+          </PropAccordionItem>
+          <PropAccordionItem
+            name="credentials"
+            status="optional"
+            value="credentials"
+          >
+            <p>
+              Inline service-account credentials —{" "}
+              <code>{"{ client_email, private_key }"}</code>. Useful when you
+              only have those fields as separate env vars (Vercel, Netlify) and
+              don't want to materialize a JSON file. <code>url()</code> and{" "}
+              <code>signedUploadUrl()</code> need either inline credentials or
+              the <code>iam.serviceAccounts.signBlob</code> permission on the
+              runtime service account so the SDK can fall back to IAM SignBlob.
+            </p>
+          </PropAccordionItem>
+          <PropAccordionItem
+            name="publicBaseUrl"
+            status="optional"
+            value="publicBaseUrl"
+          >
+            <p>
+              Origin used to build URLs from <code>url()</code>. When set,{" "}
+              <code>url(key)</code> returns{" "}
+              <code>{`\`\${publicBaseUrl}/\${key}\``}</code> and skips signing.
+              For a public GCS bucket the natural value is{" "}
+              <code>https://storage.googleapis.com/&lt;bucket&gt;</code>; or
+              point at a Cloud CDN / load balancer host. When unset,{" "}
+              <code>url()</code> returns a V4 signed read URL (1-hour default;
+              GCS caps V4 at 7 days).
+            </p>
+          </PropAccordionItem>
         </Accordion>
       </div>
     </section>
@@ -450,111 +427,105 @@ export const Adapters = () => (
           Options
         </Heading>
         <Accordion className="rounded-md border-dotted" type="multiple">
-          <AccordionItem className="border-dotted" value="container">
-            <AccordionTrigger>
-              <code>container</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>
-                required. Surfaced as <code>adapter.bucket</code> for
-                cross-adapter API consistency, even though Azure's term is
-                "container".
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="connectionString">
-            <AccordionTrigger>
-              <code>connectionString</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>
-                highest precedence. Falls back to{" "}
-                <code>AZURE_STORAGE_CONNECTION_STRING</code>.
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="accountName">
-            <AccordionTrigger>
-              <code>accountName</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>
-                falls back to <code>AZURE_STORAGE_ACCOUNT_NAME</code> then{" "}
-                <code>AZURE_STORAGE_ACCOUNT</code>.
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="accountKey">
-            <AccordionTrigger>
-              <code>accountKey</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>
-                falls back to <code>AZURE_STORAGE_ACCOUNT_KEY</code> then{" "}
-                <code>AZURE_STORAGE_KEY</code>. Required if you want{" "}
-                <code>url()</code> or <code>signedUploadUrl()</code> to mint new
-                SAS tokens.
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="sasToken">
-            <AccordionTrigger>
-              <code>sasToken</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>
-                pre-issued SAS, with or without leading <code>?</code>. Without
-                an account key the signing methods throw — reads/writes still
-                work as long as the SAS grants those permissions.
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="endpoint">
-            <AccordionTrigger>
-              <code>endpoint</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>
-                optional. Defaults to{" "}
-                <code>https://&lt;accountName&gt;.blob.core.windows.net</code>.
-                Override for Azurite (local emulator) or sovereign clouds (US
-                Government, China).
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="publicBaseUrl">
-            <AccordionTrigger>
-              <code>publicBaseUrl</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>
-                optional. When set, <code>url()</code> returns{" "}
-                <code>{`\`\${publicBaseUrl}/\${key}\``}</code> and skips
-                signing. Use for a public-access container or a CDN (
-                <code>*.azureedge.net</code>) in front of the account. When
-                unset, <code>url()</code> returns a SAS read URL (1-hour
-                default).
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="limitations">
-            <AccordionTrigger>Limitations</AccordionTrigger>
-            <AccordionContent>
-              <p>
-                <code>signedUploadUrl()</code> issues PUT-only — Azure SAS has
-                no POST-policy equivalent. <code>maxSize</code> throws because
-                Azure can't enforce upload caps at the URL level; enforce them
-                at your application gateway. <code>copy()</code> uses{" "}
-                <code>syncCopyFromURL</code>, which caps at 256 MB source size;
-                larger blobs need <code>beginCopyFromURL</code> via{" "}
-                <code>adapter.raw</code>. <code>@azure/identity</code> / Managed
-                Identity is not supported in v1 — drop down to{" "}
-                <code>adapter.raw</code> or wait for a future{" "}
-                <code>client</code> option.
-              </p>
-            </AccordionContent>
-          </AccordionItem>
+          <PropAccordionItem
+            name="container"
+            status="required"
+            value="container"
+          >
+            <p>
+              Azure container name. Surfaced as <code>adapter.bucket</code> for
+              cross-adapter API consistency, even though Azure's own term is
+              "container".
+            </p>
+          </PropAccordionItem>
+          <PropAccordionItem
+            name="connectionString"
+            status="optional"
+            value="connectionString"
+          >
+            <p>
+              Full Azure Storage connection string (
+              <code>
+                DefaultEndpointsProtocol=...;AccountName=...;AccountKey=...
+              </code>
+              ). Highest-precedence credential. Falls back to{" "}
+              <code>AZURE_STORAGE_CONNECTION_STRING</code>. The adapter parses
+              out the account name + key so signing methods keep working.
+            </p>
+          </PropAccordionItem>
+          <PropAccordionItem
+            name="accountName"
+            status="optional"
+            value="accountName"
+          >
+            <p>
+              Storage account name (e.g. <code>mystorageaccount</code>). Used
+              with <code>accountKey</code>, <code>sasToken</code>, or
+              anonymously. Falls back to <code>AZURE_STORAGE_ACCOUNT_NAME</code>{" "}
+              then <code>AZURE_STORAGE_ACCOUNT</code>.
+            </p>
+          </PropAccordionItem>
+          <PropAccordionItem
+            name="accountKey"
+            status="optional"
+            value="accountKey"
+          >
+            <p>
+              Shared-key (account key) for signing. Falls back to{" "}
+              <code>AZURE_STORAGE_ACCOUNT_KEY</code> then{" "}
+              <code>AZURE_STORAGE_KEY</code>. Required if you want{" "}
+              <code>url()</code> or <code>signedUploadUrl()</code> to mint new
+              SAS tokens — without it those methods throw.
+            </p>
+          </PropAccordionItem>
+          <PropAccordionItem name="sasToken" status="optional" value="sasToken">
+            <p>
+              Pre-issued SAS token, with or without the leading <code>?</code>.
+              Without an account key the signing methods throw —
+              reads/writes/listing still work as long as the SAS grants those
+              permissions.
+            </p>
+          </PropAccordionItem>
+          <PropAccordionItem name="endpoint" status="optional" value="endpoint">
+            <p>
+              Override the service endpoint host. Defaults to{" "}
+              <code>https://&lt;accountName&gt;.blob.core.windows.net</code>.
+              Override for Azurite (
+              <code>http://127.0.0.1:10000/devstoreaccount1</code>) or sovereign
+              clouds (US Government, China).
+            </p>
+          </PropAccordionItem>
+          <PropAccordionItem
+            name="publicBaseUrl"
+            status="optional"
+            value="publicBaseUrl"
+          >
+            <p>
+              Origin used to build URLs from <code>url()</code>. When set,{" "}
+              <code>url(key)</code> returns{" "}
+              <code>{`\`\${publicBaseUrl}/\${key}\``}</code> and skips signing.
+              Use for a public-access container or a CDN (
+              <code>*.azureedge.net</code>) in front of the account. When unset,{" "}
+              <code>url()</code> returns a SAS read URL (1-hour default).
+            </p>
+          </PropAccordionItem>
         </Accordion>
+      </div>
+      <div className="flex flex-col gap-2">
+        <Heading as="h4" id="adapter-azure-limitations">
+          Limitations
+        </Heading>
+        <p>
+          <code>signedUploadUrl()</code> issues PUT-only — Azure SAS has no
+          POST-policy equivalent. <code>maxSize</code> throws because Azure
+          can't enforce upload caps at the URL level; enforce them at your
+          application gateway. <code>copy()</code> uses{" "}
+          <code>syncCopyFromURL</code>, which caps at 256 MB source size; larger
+          blobs need <code>beginCopyFromURL</code> via <code>adapter.raw</code>.{" "}
+          <code>@azure/identity</code> / Managed Identity is not supported in v1
+          — drop down to <code>adapter.raw</code> or wait for a future{" "}
+          <code>client</code> option.
+        </p>
       </div>
     </section>
 
@@ -574,115 +545,93 @@ export const Adapters = () => (
           Options
         </Heading>
         <Accordion className="rounded-md border-dotted" type="multiple">
-          <AccordionItem className="border-dotted" value="bucket">
-            <AccordionTrigger>
-              <code>bucket</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>
-                required. Must already exist (this SDK does not create buckets).
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="client">
-            <AccordionTrigger>
-              <code>client</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>
-                optional, highest precedence. Either a{" "}
-                <code>StorageClient</code> from{" "}
-                <code>@supabase/storage-js</code> or a{" "}
-                <code>SupabaseClient</code> from{" "}
-                <code>@supabase/supabase-js</code> — the adapter unwraps{" "}
-                <code>client.storage</code> automatically.
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="url">
-            <AccordionTrigger>
-              <code>url</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>
-                Supabase project URL, e.g. <code>https://xxxx.supabase.co</code>
-                . The adapter appends <code>/storage/v1</code>. Falls back to{" "}
-                <code>SUPABASE_URL</code> then{" "}
-                <code>NEXT_PUBLIC_SUPABASE_URL</code>.
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="key">
-            <AccordionTrigger>
-              <code>key</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>
-                API key. The service role key is required for writes on
-                RLS-protected buckets; the anon key works for public buckets.
-                Falls back to <code>SUPABASE_SERVICE_ROLE_KEY</code>,{" "}
-                <code>SUPABASE_KEY</code>, then{" "}
-                <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code>.
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="public">
-            <AccordionTrigger>
-              <code>public</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>
-                boolean, optional. Set to <code>true</code> for a public bucket
-                so <code>url()</code> returns the permanent unsigned{" "}
-                <code>getPublicUrl()</code> result instead of minting a signed
-                read URL. Supabase has no API to detect bucket visibility, so
-                the adapter trusts what you pass — a wrong value yields a 4xx on
-                fetch.
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="publicBaseUrl">
-            <AccordionTrigger>
-              <code>publicBaseUrl</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>
-                optional. When set, <code>url()</code> returns{" "}
-                <code>{`\`\${publicBaseUrl}/\${key}\``}</code> and skips both
-                signing and <code>getPublicUrl()</code>. Use for a CDN in front
-                of the project. Implies <code>public: true</code>.
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="defaultUrlExpiresIn">
-            <AccordionTrigger>
-              <code>defaultUrlExpiresIn</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>
-                number of seconds, optional. Default expiry for signed read URLs
-                returned by <code>url()</code>. Defaults to 3600.
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="limitations">
-            <AccordionTrigger>Limitations</AccordionTrigger>
-            <AccordionContent>
-              <p>
-                <code>signedUploadUrl()</code> issues PUT-only.{" "}
-                <code>maxSize</code> throws — Supabase signed upload URLs have
-                no <code>content-length-range</code> equivalent; set the
-                bucket-level file size limit in the Supabase dashboard or
-                enforce caps at your application gateway. <code>expiresIn</code>{" "}
-                on <code>signedUploadUrl()</code> is ignored — Supabase fixes
-                the TTL at 2 hours server-side. <code>list()</code> uses
-                Supabase's V1 offset/limit API; the adapter encodes{" "}
-                <code>offset</code> as a numeric cursor string so it threads
-                through the unified API.
-              </p>
-            </AccordionContent>
-          </AccordionItem>
+          <PropAccordionItem name="bucket" status="required" value="bucket">
+            <p>
+              Supabase storage bucket. Must already exist — this SDK does not
+              create buckets.
+            </p>
+          </PropAccordionItem>
+          <PropAccordionItem name="client" status="optional" value="client">
+            <p>
+              Existing client to share with the rest of your app (auth,
+              postgrest). Highest-precedence credential. Pass either a{" "}
+              <code>StorageClient</code> from <code>@supabase/storage-js</code>{" "}
+              or a <code>SupabaseClient</code> from{" "}
+              <code>@supabase/supabase-js</code> — the adapter unwraps{" "}
+              <code>client.storage</code> automatically.
+            </p>
+          </PropAccordionItem>
+          <PropAccordionItem name="url" status="required" value="url">
+            <p>
+              Supabase project URL, e.g. <code>https://xxxx.supabase.co</code>.
+              The adapter appends <code>/storage/v1</code> automatically. Falls
+              back to <code>SUPABASE_URL</code> then{" "}
+              <code>NEXT_PUBLIC_SUPABASE_URL</code>. Required unless{" "}
+              <code>client</code> is passed.
+            </p>
+          </PropAccordionItem>
+          <PropAccordionItem name="key" status="required" value="key">
+            <p>
+              Supabase API key. The service role key is required for writes on
+              RLS-protected buckets; the anon key works for public buckets.
+              Falls back to <code>SUPABASE_SERVICE_ROLE_KEY</code>,{" "}
+              <code>SUPABASE_KEY</code>, then{" "}
+              <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code>. Required unless{" "}
+              <code>client</code> is passed.
+            </p>
+          </PropAccordionItem>
+          <PropAccordionItem name="public" status="optional" value="public">
+            <p>
+              Treat the bucket as public. When <code>true</code>,{" "}
+              <code>url()</code> returns the permanent unsigned{" "}
+              <code>getPublicUrl()</code> result instead of minting a signed
+              read URL. Supabase has no API to detect bucket visibility, so the
+              adapter trusts what you pass — a wrong value yields a 4xx on
+              fetch.
+            </p>
+          </PropAccordionItem>
+          <PropAccordionItem
+            name="publicBaseUrl"
+            status="optional"
+            value="publicBaseUrl"
+          >
+            <p>
+              Origin used to build URLs from <code>url()</code>. When set,{" "}
+              <code>url(key)</code> returns{" "}
+              <code>{`\`\${publicBaseUrl}/\${key}\``}</code> and skips both
+              signing and <code>getPublicUrl()</code>. Use for a CDN in front of
+              the project. Implies <code>public: true</code>.
+            </p>
+          </PropAccordionItem>
+          <PropAccordionItem
+            name="defaultUrlExpiresIn"
+            status="optional"
+            value="defaultUrlExpiresIn"
+          >
+            <p>
+              Default expiry, in seconds, for the signed read URLs returned by{" "}
+              <code>url()</code> when neither <code>public</code> nor{" "}
+              <code>publicBaseUrl</code> is set. Defaults to 3600 (1 hour).
+              Per-call <code>url(key, {"{ expiresIn }"})</code> overrides.
+            </p>
+          </PropAccordionItem>
         </Accordion>
+      </div>
+      <div className="flex flex-col gap-2">
+        <Heading as="h4" id="adapter-supabase-limitations">
+          Limitations
+        </Heading>
+        <p>
+          <code>signedUploadUrl()</code> issues PUT-only. <code>maxSize</code>{" "}
+          throws — Supabase signed upload URLs have no{" "}
+          <code>content-length-range</code> equivalent; set the bucket-level
+          file size limit in the Supabase dashboard or enforce caps at your
+          application gateway. <code>expiresIn</code> on{" "}
+          <code>signedUploadUrl()</code> is ignored — Supabase fixes the TTL at
+          2 hours server-side. <code>list()</code> uses Supabase's V1
+          offset/limit API; the adapter encodes <code>offset</code> as a numeric
+          cursor string so it threads through the unified API.
+        </p>
       </div>
     </section>
 
@@ -704,78 +653,71 @@ export const Adapters = () => (
           Options
         </Heading>
         <Accordion className="rounded-md border-dotted" type="multiple">
-          <AccordionItem className="border-dotted" value="root">
-            <AccordionTrigger>
-              <code>root</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>
-                required. Absolute or relative directory the adapter manages.
-                Created on first upload. All operations are scoped to this
-                directory; keys that resolve outside it (e.g.{" "}
-                <code>../etc/passwd</code>) throw <code>Provider</code>.
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="urlBaseUrl">
-            <AccordionTrigger>
-              <code>urlBaseUrl</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>
-                optional. When set, <code>url(key)</code> returns{" "}
-                <code>{`\`\${urlBaseUrl}/\${key}\``}</code> — useful when a dev
-                server (Next.js <code>/public</code> mount,{" "}
-                <code>serve-static</code>, etc.) is exposing the same{" "}
-                <code>root</code>. When unset, <code>url()</code> returns a{" "}
-                <code>file://</code> URL — fine for CLIs/tests, not browsers.
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="defaultUrlExpiresIn">
-            <AccordionTrigger>
-              <code>defaultUrlExpiresIn</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>
-                number of seconds, optional. Threaded into the{" "}
-                <code>?expires=</code> query string of{" "}
-                <code>signedUploadUrl()</code> for parity with the cloud
-                adapters. Defaults to 3600. The fs adapter does not enforce
-                expiry itself; a dev upload-handler can validate the param.
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="storageLayout">
-            <AccordionTrigger>Storage layout</AccordionTrigger>
-            <AccordionContent>
-              <p>
-                Body at <code>{`\${root}/\${key}`}</code>; sidecar at{" "}
-                <code>{`\${root}/\${key}.meta.json`}</code>. Sidecars survive{" "}
-                <code>cp -r</code> / <code>git mv</code> / partial-tree
-                deletion. <code>list()</code> hides them. ETag is a
-                SHA-1-derived stable hash computed at upload time.
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="limitations">
-            <AccordionTrigger>Limitations</AccordionTrigger>
-            <AccordionContent>
-              <p>
-                <code>signedUploadUrl()</code> throws without{" "}
-                <code>urlBaseUrl</code> — there's no upload server to sign
-                against. <code>url()</code> throws on{" "}
-                <code>responseContentDisposition</code> without{" "}
-                <code>urlBaseUrl</code>: <code>file://</code> has no signature
-                in which to bind the override. Files written by hand into{" "}
-                <code>root</code> without a sidecar are still readable —{" "}
-                <code>contentType</code> falls back to{" "}
-                <code>application/octet-stream</code> and <code>etag</code> is
-                absent.
-              </p>
-            </AccordionContent>
-          </AccordionItem>
+          <PropAccordionItem name="root" status="required" value="root">
+            <p>
+              Directory the adapter manages. Absolute or relative; created on
+              first upload. All operations are scoped to this directory — keys
+              that resolve outside it (e.g. <code>../etc/passwd</code>) throw{" "}
+              <code>Provider</code>.
+            </p>
+          </PropAccordionItem>
+          <PropAccordionItem
+            name="urlBaseUrl"
+            status="optional"
+            value="urlBaseUrl"
+          >
+            <p>
+              Origin used to build URLs from <code>url()</code>. When set,{" "}
+              <code>url(key)</code> returns{" "}
+              <code>{`\`\${urlBaseUrl}/\${key}\``}</code> — useful when a dev
+              server (Next.js <code>/public</code> mount,{" "}
+              <code>serve-static</code>, etc.) is exposing the same{" "}
+              <code>root</code>. When unset, <code>url()</code> returns a{" "}
+              <code>file://</code> URL — fine for CLIs/tests, not browsers.
+            </p>
+          </PropAccordionItem>
+          <PropAccordionItem
+            name="defaultUrlExpiresIn"
+            status="optional"
+            value="defaultUrlExpiresIn"
+          >
+            <p>
+              Default expiry, in seconds, threaded into the{" "}
+              <code>?expires=</code> query string of{" "}
+              <code>signedUploadUrl()</code> for parity with the cloud adapters.
+              Defaults to 3600. The fs adapter does not enforce expiry itself; a
+              dev upload-handler can validate the param.
+            </p>
+          </PropAccordionItem>
+          <PropAccordionItem
+            monospace={false}
+            name="Storage layout"
+            value="storageLayout"
+          >
+            <p>
+              Body at <code>{`\${root}/\${key}`}</code>; sidecar at{" "}
+              <code>{`\${root}/\${key}.meta.json`}</code>. Sidecars survive{" "}
+              <code>cp -r</code> / <code>git mv</code> / partial-tree deletion.{" "}
+              <code>list()</code> hides them. ETag is a SHA-1-derived stable
+              hash computed at upload time.
+            </p>
+          </PropAccordionItem>
         </Accordion>
+      </div>
+      <div className="flex flex-col gap-2">
+        <Heading as="h4" id="adapter-fs-limitations">
+          Limitations
+        </Heading>
+        <p>
+          <code>signedUploadUrl()</code> throws without <code>urlBaseUrl</code>—
+          there's no upload server to sign against. <code>url()</code> throws on{" "}
+          <code>responseContentDisposition</code> without{" "}
+          <code>urlBaseUrl</code>: <code>file://</code> has no signature in
+          which to bind the override. Files written by hand into{" "}
+          <code>root</code> without a sidecar are still readable —{" "}
+          <code>contentType</code> falls back to{" "}
+          <code>application/octet-stream</code> and <code>etag</code> is absent.
+        </p>
       </div>
     </section>
   </section>

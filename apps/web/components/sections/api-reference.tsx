@@ -1,11 +1,7 @@
 import { CodeBlock } from "@/components/code-block";
 import { Heading } from "@/components/heading";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import { PropAccordionItem } from "@/components/prop-accordion-item";
+import { Accordion } from "@/components/ui/accordion";
 
 const UPLOAD_EXAMPLE = `await files.upload("avatars/abc.png", file, {
   contentType: "image/png",
@@ -101,39 +97,38 @@ export const ApiReference = () => (
           Options
         </Heading>
         <Accordion className="rounded-md border-dotted" type="multiple">
-          <AccordionItem className="border-dotted" value="contentType">
-            <AccordionTrigger>
-              <code>contentType</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>
-                string, optional. Inferred from <code>File</code>/
-                <code>Blob</code> <code>type</code> when not set.
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="cacheControl">
-            <AccordionTrigger>
-              <code>cacheControl</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>string, optional. Sent verbatim to the provider.</p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="metadata">
-            <AccordionTrigger>
-              <code>metadata</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>
-                <code>Record&lt;string, string&gt;</code>, optional. Provider
-                user-metadata, returned by <code>head</code> and{" "}
-                <code>list</code> where the provider supports it. Vercel Blob
-                does not expose user metadata, so it round-trips as{" "}
-                <code>undefined</code>.
-              </p>
-            </AccordionContent>
-          </AccordionItem>
+          <PropAccordionItem
+            name="contentType"
+            status="optional"
+            value="contentType"
+          >
+            <p>
+              MIME type stored alongside the object and returned to readers in
+              the <code>Content-Type</code> response header. Inferred from{" "}
+              <code>File</code> / <code>Blob</code> <code>type</code> when not
+              set; falls back to <code>application/octet-stream</code>.
+            </p>
+          </PropAccordionItem>
+          <PropAccordionItem
+            name="cacheControl"
+            status="optional"
+            value="cacheControl"
+          >
+            <p>
+              <code>Cache-Control</code> header stored on the object. Sent
+              verbatim to the provider; controls how downstream caches and
+              browsers cache reads of this key.
+            </p>
+          </PropAccordionItem>
+          <PropAccordionItem name="metadata" status="optional" value="metadata">
+            <p>
+              <code>Record&lt;string, string&gt;</code> of arbitrary user
+              metadata stored alongside the object. Returned by{" "}
+              <code>head()</code> and <code>list()</code> where the provider
+              supports it. Vercel Blob has no user-metadata primitive, so it
+              round-trips as <code>undefined</code> there.
+            </p>
+          </PropAccordionItem>
         </Accordion>
       </div>
     </section>
@@ -200,33 +195,25 @@ export const ApiReference = () => (
           Options
         </Heading>
         <Accordion className="rounded-md border-dotted" type="multiple">
-          <AccordionItem className="border-dotted" value="prefix">
-            <AccordionTrigger>
-              <code>prefix</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>string, optional.</p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="limit">
-            <AccordionTrigger>
-              <code>limit</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>number, optional. Provider-specific cap; defaults to 1000.</p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="cursor">
-            <AccordionTrigger>
-              <code>cursor</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>
-                string, optional. Pass <code>cursor</code> from the previous
-                result to continue.
-              </p>
-            </AccordionContent>
-          </AccordionItem>
+          <PropAccordionItem name="prefix" status="optional" value="prefix">
+            <p>
+              Filter results to keys that start with this string. Omit to list
+              everything in the bucket.
+            </p>
+          </PropAccordionItem>
+          <PropAccordionItem name="limit" status="optional" value="limit">
+            <p>
+              Maximum number of items to return per page. Capped per-provider
+              (most providers max around 1000). Defaults to 1000.
+            </p>
+          </PropAccordionItem>
+          <PropAccordionItem name="cursor" status="optional" value="cursor">
+            <p>
+              Continuation token from a prior result. Pass the{" "}
+              <code>cursor</code> field of the previous page back in to fetch
+              the next page; omit on the first call.
+            </p>
+          </PropAccordionItem>
         </Accordion>
       </div>
     </section>
@@ -257,44 +244,40 @@ export const ApiReference = () => (
           Options
         </Heading>
         <Accordion className="rounded-md border-dotted" type="multiple">
-          <AccordionItem className="border-dotted" value="expiresIn">
-            <AccordionTrigger>
-              <code>expiresIn</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>
-                number of seconds, optional. Honored on signing adapters;
-                ignored on Vercel Blob (no signing primitive). Defaults to the
-                adapter's <code>defaultUrlExpiresIn</code> (1 hour).
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem
-            className="border-dotted"
+          <PropAccordionItem
+            name="expiresIn"
+            status="optional"
+            value="expiresIn"
+          >
+            <p>
+              URL expiry, in seconds. Honored on signing adapters (S3, R2 over
+              HTTP, MinIO, GCS, Azure with shared key, Supabase, R2 hybrid);
+              ignored on Vercel Blob (no signing primitive). Defaults to the
+              adapter's <code>defaultUrlExpiresIn</code> (1 hour).
+            </p>
+          </PropAccordionItem>
+          <PropAccordionItem
+            name="responseContentDisposition"
+            status="optional"
             value="responseContentDisposition"
           >
-            <AccordionTrigger>
-              <code>responseContentDisposition</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>
-                string, optional.{" "}
-                <span className="text-foreground">
-                  Strongly recommended for buckets with user-uploaded content.
-                </span>{" "}
-                Without it, the browser uses the stored{" "}
-                <code>Content-Type</code> to decide whether to render or
-                download — a user-uploaded <code>.html</code> (or SVG with
-                embedded scripts) will execute inline at your bucket's origin.
-                Pass <code>"attachment"</code> to force a download.{" "}
-                <strong>Forces the signing path</strong> on adapters that can
-                sign (overrides <code>publicBaseUrl</code>, because permanent
-                CDN URLs can't carry the override). Throws on Vercel Blob (no
-                Content-Disposition primitive) and on the R2 binding without
-                HTTP credentials.
-              </p>
-            </AccordionContent>
-          </AccordionItem>
+            <p>
+              Override the <code>Content-Disposition</code> header on the
+              response.{" "}
+              <span className="text-foreground">
+                Strongly recommended for buckets with user-uploaded content.
+              </span>{" "}
+              Without it, the browser uses the stored <code>Content-Type</code>{" "}
+              to decide whether to render or download — a user-uploaded{" "}
+              <code>.html</code> (or SVG with embedded scripts) will execute
+              inline at your bucket's origin. Pass <code>"attachment"</code> to
+              force a download. <strong>Forces the signing path</strong> on
+              adapters that can sign (overrides <code>publicBaseUrl</code>,
+              because permanent CDN URLs can't carry the override). Throws on
+              Vercel Blob (no Content-Disposition primitive) and on the R2
+              binding without HTTP credentials.
+            </p>
+          </PropAccordionItem>
         </Accordion>
       </div>
     </section>
@@ -335,53 +318,48 @@ export const ApiReference = () => (
           Options
         </Heading>
         <Accordion className="rounded-md border-dotted" type="multiple">
-          <AccordionItem className="border-dotted" value="expiresIn">
-            <AccordionTrigger>
-              <code>expiresIn</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>number of seconds. Required.</p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="contentType">
-            <AccordionTrigger>
-              <code>contentType</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>
-                string, optional. Bound into the signature so the upload's{" "}
-                <code>Content-Type</code> must match.
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="maxSize">
-            <AccordionTrigger>
-              <code>maxSize</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>
-                number of bytes, optional.{" "}
-                <span className="text-foreground">Strongly recommended.</span>{" "}
-                Without it, the signed URL has no server-side size cap — anyone
-                with the URL can upload an arbitrarily large file until{" "}
-                <code>expiresIn</code> elapses. With it, the adapter switches to
-                a presigned POST form that enforces the size via{" "}
-                <code>content-length-range</code>.
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem className="border-dotted" value="minSize">
-            <AccordionTrigger>
-              <code>minSize</code>
-            </AccordionTrigger>
-            <AccordionContent>
-              <p>
-                number of bytes, optional. Defaults to <code>1</code> when{" "}
-                <code>maxSize</code> is set, so empty uploads are rejected by
-                the POST policy. Pass <code>0</code> to allow them.
-              </p>
-            </AccordionContent>
-          </AccordionItem>
+          <PropAccordionItem
+            name="expiresIn"
+            status="required"
+            value="expiresIn"
+          >
+            <p>
+              How long the signed URL stays valid, in seconds. After it elapses,
+              the URL stops working and the client must request a new one.
+            </p>
+          </PropAccordionItem>
+          <PropAccordionItem
+            name="contentType"
+            status="optional"
+            value="contentType"
+          >
+            <p>
+              MIME type bound into the signature. The browser's PUT/POST must
+              send a matching <code>Content-Type</code> header or the provider
+              rejects the upload.
+            </p>
+          </PropAccordionItem>
+          <PropAccordionItem name="maxSize" status="optional" value="maxSize">
+            <p>
+              Maximum upload size in bytes, enforced server-side.{" "}
+              <span className="text-foreground">Strongly recommended.</span>{" "}
+              Without it, the adapter falls back to a presigned PUT URL with no
+              server-side size cap — anyone with the URL can upload an
+              arbitrarily large file until <code>expiresIn</code> elapses. With
+              it, the adapter switches to a presigned POST form whose policy
+              enforces the size via <code>content-length-range</code>.
+            </p>
+          </PropAccordionItem>
+          <PropAccordionItem name="minSize" status="optional" value="minSize">
+            <p>
+              Minimum upload size in bytes for the presigned POST policy.
+              Defaults to <code>1</code> when <code>maxSize</code> is set, so
+              empty uploads are rejected (the most common app assumption — "file
+              present means real content" — fails silently when 0-byte uploads
+              land). Pass <code>0</code> to allow empty uploads. Only consulted
+              when <code>maxSize</code> is set.
+            </p>
+          </PropAccordionItem>
         </Accordion>
       </div>
     </section>
