@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   description:
-    "A unified storage SDK for object/blob backends — S3, Cloudflare R2, Vercel Blob, MinIO, DigitalOcean Spaces, Storj, Hetzner Object Storage, Akamai Cloud Object Storage, Google Cloud Storage, Azure Blob Storage, Supabase Storage, UploadThing.",
+    "A unified storage SDK for object and blob backends. One small, honest API. Web-standards I/O. An escape hatch when you need the native client.",
   title: "Files SDK",
 };
 
