@@ -213,9 +213,78 @@ afterEach(() => {
   globalThis.fetch = originalFetch;
 });
 
+const restoreEnv = (key: string, value: string | undefined): void => {
+  if (value === undefined) {
+    Reflect.deleteProperty(process.env, key);
+  } else {
+    process.env[key] = value;
+  }
+};
+
 describe("google-drive adapter", () => {
   test("missing auth throws at construction", () => {
     expect(() => googleDrive({} as never)).toThrow(/missing auth/iu);
+  });
+
+  test("env-var fallback uses GOOGLE_DRIVE_CLIENT_EMAIL + GOOGLE_DRIVE_PRIVATE_KEY", () => {
+    const prevEmail = process.env.GOOGLE_DRIVE_CLIENT_EMAIL;
+    const prevKey = process.env.GOOGLE_DRIVE_PRIVATE_KEY;
+    process.env.GOOGLE_DRIVE_CLIENT_EMAIL = "env-svc@example.iam";
+    process.env.GOOGLE_DRIVE_PRIVATE_KEY = "env-key";
+    try {
+      const adapter = googleDrive();
+      expect(adapter.rootFolderId).toBe("root");
+    } finally {
+      restoreEnv("GOOGLE_DRIVE_CLIENT_EMAIL", prevEmail);
+      restoreEnv("GOOGLE_DRIVE_PRIVATE_KEY", prevKey);
+    }
+  });
+
+  test("env-var fallback uses GOOGLE_DRIVE_KEY_FILE", () => {
+    const prevFile = process.env.GOOGLE_DRIVE_KEY_FILE;
+    process.env.GOOGLE_DRIVE_KEY_FILE = "/tmp/sa.json";
+    try {
+      expect(() => googleDrive()).not.toThrow();
+    } finally {
+      restoreEnv("GOOGLE_DRIVE_KEY_FILE", prevFile);
+    }
+  });
+
+  test("env GOOGLE_DRIVE_ID populates driveId and rootFolderId by default", () => {
+    const prevEmail = process.env.GOOGLE_DRIVE_CLIENT_EMAIL;
+    const prevKey = process.env.GOOGLE_DRIVE_PRIVATE_KEY;
+    const prevId = process.env.GOOGLE_DRIVE_ID;
+    process.env.GOOGLE_DRIVE_CLIENT_EMAIL = "env-svc@example.iam";
+    process.env.GOOGLE_DRIVE_PRIVATE_KEY = "env-key";
+    process.env.GOOGLE_DRIVE_ID = "shared-drive-123";
+    try {
+      const adapter = googleDrive();
+      expect(adapter.rootFolderId).toBe("shared-drive-123");
+    } finally {
+      restoreEnv("GOOGLE_DRIVE_CLIENT_EMAIL", prevEmail);
+      restoreEnv("GOOGLE_DRIVE_PRIVATE_KEY", prevKey);
+      restoreEnv("GOOGLE_DRIVE_ID", prevId);
+    }
+  });
+
+  test("env GOOGLE_DRIVE_ROOT_FOLDER_ID overrides the driveId fallback", () => {
+    const prevEmail = process.env.GOOGLE_DRIVE_CLIENT_EMAIL;
+    const prevKey = process.env.GOOGLE_DRIVE_PRIVATE_KEY;
+    const prevId = process.env.GOOGLE_DRIVE_ID;
+    const prevRoot = process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID;
+    process.env.GOOGLE_DRIVE_CLIENT_EMAIL = "env-svc@example.iam";
+    process.env.GOOGLE_DRIVE_PRIVATE_KEY = "env-key";
+    process.env.GOOGLE_DRIVE_ID = "shared-drive-123";
+    process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID = "folder-abc";
+    try {
+      const adapter = googleDrive();
+      expect(adapter.rootFolderId).toBe("folder-abc");
+    } finally {
+      restoreEnv("GOOGLE_DRIVE_CLIENT_EMAIL", prevEmail);
+      restoreEnv("GOOGLE_DRIVE_PRIVATE_KEY", prevKey);
+      restoreEnv("GOOGLE_DRIVE_ID", prevId);
+      restoreEnv("GOOGLE_DRIVE_ROOT_FOLDER_ID", prevRoot);
+    }
   });
 
   test("upload sets fsdkKey, returns size+etag, caches fileId", async () => {

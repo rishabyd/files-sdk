@@ -13,6 +13,7 @@ import type {
   StoredFile,
   UploadResult,
 } from "../index.js";
+import { readEnv } from "../internal/env.js";
 import { FilesError } from "../internal/errors.js";
 import type { FilesErrorCode } from "../internal/errors.js";
 import { createStoredFile } from "../internal/stored-file.js";
@@ -324,20 +325,30 @@ const fileToStoredMeta = (
 
 type AuthHandle = JWT | GoogleAuth | OAuth2Client;
 
+const hasEnvAuth = (): boolean => {
+  const email = readEnv("GOOGLE_DRIVE_CLIENT_EMAIL");
+  const key = readEnv("GOOGLE_DRIVE_PRIVATE_KEY");
+  if (email && key) {
+    return true;
+  }
+  return Boolean(readEnv("GOOGLE_DRIVE_KEY_FILE"));
+};
+
 const buildAuth = (opts: GoogleDriveAdapterOptions): AuthHandle | undefined => {
+  const subject = opts.subject ?? readEnv("GOOGLE_DRIVE_SUBJECT");
   if (opts.credentials) {
     return new JWT({
       email: opts.credentials.client_email,
       key: opts.credentials.private_key,
       scopes: [DRIVE_SCOPE],
-      ...(opts.subject && { subject: opts.subject }),
+      ...(subject && { subject }),
     });
   }
   if (opts.keyFilename) {
     return new GoogleAuth({
       keyFile: opts.keyFilename,
       scopes: [DRIVE_SCOPE],
-      ...(opts.subject && { clientOptions: { subject: opts.subject } }),
+      ...(subject && { clientOptions: { subject } }),
     });
   }
   if (opts.oauth) {
@@ -348,19 +359,37 @@ const buildAuth = (opts: GoogleDriveAdapterOptions): AuthHandle | undefined => {
     o.setCredentials({ refresh_token: opts.oauth.refreshToken });
     return o;
   }
+  const envEmail = readEnv("GOOGLE_DRIVE_CLIENT_EMAIL");
+  const envKey = readEnv("GOOGLE_DRIVE_PRIVATE_KEY");
+  if (envEmail && envKey) {
+    return new JWT({
+      email: envEmail,
+      key: envKey,
+      scopes: [DRIVE_SCOPE],
+      ...(subject && { subject }),
+    });
+  }
+  const envKeyFile = readEnv("GOOGLE_DRIVE_KEY_FILE");
+  if (envKeyFile) {
+    return new GoogleAuth({
+      keyFile: envKeyFile,
+      scopes: [DRIVE_SCOPE],
+      ...(subject && { clientOptions: { subject } }),
+    });
+  }
   return undefined;
 };
 
 export const googleDrive = (
-  opts: GoogleDriveAdapterOptions
+  opts: GoogleDriveAdapterOptions = {}
 ): GoogleDriveAdapter => {
   const haveExplicit = Boolean(
     opts.credentials || opts.keyFilename || opts.oauth || opts.client
   );
-  if (!haveExplicit) {
+  if (!haveExplicit && !hasEnvAuth()) {
     throw new FilesError(
       "Provider",
-      "google-drive adapter: missing auth. Pass `credentials`, `keyFilename`, `oauth`, or `client`."
+      "google-drive adapter: missing auth. Pass `credentials`, `keyFilename`, `oauth`, or `client`. Env fallbacks: GOOGLE_DRIVE_CLIENT_EMAIL + GOOGLE_DRIVE_PRIVATE_KEY, or GOOGLE_DRIVE_KEY_FILE."
     );
   }
 
@@ -374,14 +403,19 @@ export const googleDrive = (
   } else {
     const built = buildAuth(opts);
     if (!built) {
-      // Unreachable — haveExplicit guarantees one of the three shapes.
+      // Unreachable — the guard above guarantees explicit or env auth.
       throw new FilesError("Provider", "google-drive: failed to build auth");
     }
     authForTokens = built;
     driveClient = drive({ auth: built as never, version: "v3" });
   }
 
-  const rootFolderId = opts.rootFolderId ?? "root";
+  const driveId = opts.driveId ?? readEnv("GOOGLE_DRIVE_ID");
+  const rootFolderId =
+    opts.rootFolderId ??
+    readEnv("GOOGLE_DRIVE_ROOT_FOLDER_ID") ??
+    driveId ??
+    "root";
   const publicByDefault = opts.publicByDefault ?? false;
   const fileIdCache = new LRU<string>(
     opts.fileIdCacheSize ?? DEFAULT_CACHE_SIZE
@@ -395,7 +429,7 @@ export const googleDrive = (
   } = {
     includeItemsFromAllDrives: true,
     supportsAllDrives: true,
-    ...(opts.driveId && { corpora: "drive", driveId: opts.driveId }),
+    ...(driveId && { corpora: "drive", driveId }),
   };
 
   const resolveFileId = async (key: string): Promise<string> => {

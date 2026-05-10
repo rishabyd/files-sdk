@@ -35,8 +35,9 @@ export const GoogleDrive = () => (
       <code>fileId</code>s and names can collide, so the adapter maps a unified
       string key onto Drive's <code>appProperties</code> (<code>fsdkKey</code>),
       with a per-instance LRU so reads after the first don't re-issue a lookup.
-      Three auth modes: service-account credentials, an OAuth refresh token, or
-      a pre-built Drive client (the escape hatch).
+      Four auth modes: service-account credentials (inline or via key file), an
+      OAuth refresh token, a pre-built Drive client (the escape hatch), or
+      env-var fallback.
     </p>
     <CodeBlock code={GOOGLE_DRIVE_EXAMPLE} lang="ts" />
     <div className="flex flex-col gap-2">
@@ -55,6 +56,8 @@ export const GoogleDrive = () => (
             with the other auth shapes. Service accounts have a 15 GB personal
             quota — production usage should target a Shared Drive (
             <code>driveId</code>) with the service account added as a member.
+            Falls back to the <code>GOOGLE_DRIVE_CLIENT_EMAIL</code> +{" "}
+            <code>GOOGLE_DRIVE_PRIVATE_KEY</code> environment variables.
           </p>
         </PropAccordionItem>
         <PropAccordionItem
@@ -65,7 +68,8 @@ export const GoogleDrive = () => (
           <p>
             Path to a service-account JSON file. Mutually exclusive with{" "}
             <code>credentials</code>, <code>oauth</code>, and{" "}
-            <code>client</code>.
+            <code>client</code>. Falls back to the{" "}
+            <code>GOOGLE_DRIVE_KEY_FILE</code> environment variable.
           </p>
         </PropAccordionItem>
         <PropAccordionItem name="oauth" status="optional" value="oauth">
@@ -93,7 +97,8 @@ export const GoogleDrive = () => (
           <p>
             Domain-wide delegation subject — the user the service account should
             impersonate. Only honored with <code>credentials</code> or{" "}
-            <code>keyFilename</code>.
+            <code>keyFilename</code>. Falls back to the{" "}
+            <code>GOOGLE_DRIVE_SUBJECT</code> environment variable.
           </p>
         </PropAccordionItem>
         <PropAccordionItem name="driveId" status="optional" value="driveId">
@@ -102,7 +107,8 @@ export const GoogleDrive = () => (
             without one the adapter writes against the service account's
             personal 15 GB quota. When set, all queries scope to the Shared
             Drive (<code>corpora=drive</code>,{" "}
-            <code>supportsAllDrives=true</code>).
+            <code>supportsAllDrives=true</code>). Falls back to the{" "}
+            <code>GOOGLE_DRIVE_ID</code> environment variable.
           </p>
         </PropAccordionItem>
         <PropAccordionItem
@@ -112,10 +118,12 @@ export const GoogleDrive = () => (
         >
           <p>
             Logical "bucket root" — virtual keys live under this folder.
-            Defaults to <code>"root"</code> (My Drive root). When you've passed
-            a <code>driveId</code>, set <code>rootFolderId</code> to the Shared
-            Drive's root id (or a sub-folder id) so uploads land inside it
-            instead of in the impersonated user's drive.
+            Defaults to <code>"root"</code> (My Drive root), or to{" "}
+            <code>driveId</code> when set so Shared Drives work without extra
+            config. When you've passed a <code>driveId</code> but want to scope
+            uploads to a sub-folder, set <code>rootFolderId</code> to that
+            folder's id. Falls back to the{" "}
+            <code>GOOGLE_DRIVE_ROOT_FOLDER_ID</code> environment variable.
           </p>
         </PropAccordionItem>
         <PropAccordionItem

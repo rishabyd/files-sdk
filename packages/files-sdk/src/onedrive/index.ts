@@ -27,6 +27,7 @@ import type {
   StoredFile,
   UploadResult,
 } from "../index.js";
+import { readEnv } from "../internal/env.js";
 import { FilesError } from "../internal/errors.js";
 import type { FilesErrorCode } from "../internal/errors.js";
 import { createStoredFile } from "../internal/stored-file.js";
@@ -425,6 +426,38 @@ const createStaticAccessTokenAuthProvider = (
   },
 });
 
+const envClientCredentials = ():
+  | {
+      tenantId: string;
+      clientId: string;
+      clientSecret: string;
+    }
+  | undefined => {
+  const tenantId = readEnv("ONEDRIVE_TENANT_ID");
+  const clientId = readEnv("ONEDRIVE_CLIENT_ID");
+  const clientSecret = readEnv("ONEDRIVE_CLIENT_SECRET");
+  if (tenantId && clientId && clientSecret) {
+    return { clientId, clientSecret, tenantId };
+  }
+  return undefined;
+};
+
+const hasEnvAuth = (): boolean =>
+  Boolean(readEnv("ONEDRIVE_ACCESS_TOKEN")) || Boolean(envClientCredentials());
+
+const usesClientCredentialsAuth = (opts: OneDriveAdapterOptions): boolean => {
+  if (opts.client || opts.accessToken !== undefined || opts.oauth) {
+    return false;
+  }
+  if (opts.clientCredentials) {
+    return true;
+  }
+  if (readEnv("ONEDRIVE_ACCESS_TOKEN")) {
+    return false;
+  }
+  return Boolean(envClientCredentials());
+};
+
 const buildAuthProvider = (
   opts: OneDriveAdapterOptions
 ): AuthenticationProvider | undefined => {
@@ -455,11 +488,29 @@ const buildAuthProvider = (
       scopes: [GRAPH_DEFAULT_SCOPE],
     });
   }
+  const envAccessToken = readEnv("ONEDRIVE_ACCESS_TOKEN");
+  if (envAccessToken) {
+    return createStaticAccessTokenAuthProvider(envAccessToken);
+  }
+  const envCreds = envClientCredentials();
+  if (envCreds) {
+    const credential = new ClientSecretCredential(
+      envCreds.tenantId,
+      envCreds.clientId,
+      envCreds.clientSecret
+    );
+    return new TokenCredentialAuthenticationProvider(credential, {
+      scopes: [GRAPH_DEFAULT_SCOPE],
+    });
+  }
   return undefined;
 };
 
 const resolveBasePath = (opts: OneDriveAdapterOptions): string => {
-  const targets = [opts.driveId, opts.siteId, opts.userId].filter(
+  const driveId = opts.driveId ?? readEnv("ONEDRIVE_DRIVE_ID");
+  const siteId = opts.siteId ?? readEnv("ONEDRIVE_SITE_ID");
+  const userId = opts.userId ?? readEnv("ONEDRIVE_USER_ID");
+  const targets = [driveId, siteId, userId].filter(
     (t): t is string => typeof t === "string" && t.length > 0
   );
   if (targets.length > 1) {
@@ -468,16 +519,16 @@ const resolveBasePath = (opts: OneDriveAdapterOptions): string => {
       "onedrive: pass at most one of `driveId`, `siteId`, `userId`."
     );
   }
-  if (opts.driveId) {
-    return `/drives/${encodeURIComponent(opts.driveId)}`;
+  if (driveId) {
+    return `/drives/${encodeURIComponent(driveId)}`;
   }
-  if (opts.siteId) {
-    return `/sites/${encodeURIComponent(opts.siteId)}/drive`;
+  if (siteId) {
+    return `/sites/${encodeURIComponent(siteId)}/drive`;
   }
-  if (opts.userId) {
-    return `/users/${encodeURIComponent(opts.userId)}/drive`;
+  if (userId) {
+    return `/users/${encodeURIComponent(userId)}/drive`;
   }
-  if (opts.clientCredentials) {
+  if (usesClientCredentialsAuth(opts)) {
     throw new FilesError(
       "Provider",
       "onedrive: clientCredentials auth requires `driveId`, `siteId`, or `userId` — `/me/drive` is not available without an interactive user."
@@ -486,17 +537,19 @@ const resolveBasePath = (opts: OneDriveAdapterOptions): string => {
   return "/me/drive";
 };
 
-export const onedrive = (opts: OneDriveAdapterOptions): OneDriveAdapter => {
+export const onedrive = (
+  opts: OneDriveAdapterOptions = {}
+): OneDriveAdapter => {
   const explicitAuthShapes = [
     opts.clientCredentials,
     opts.oauth,
     opts.accessToken,
     opts.client,
   ].filter((v) => v !== undefined && v !== null);
-  if (explicitAuthShapes.length === 0) {
+  if (explicitAuthShapes.length === 0 && !hasEnvAuth()) {
     throw new FilesError(
       "Provider",
-      "onedrive adapter: missing auth. Pass `clientCredentials`, `oauth`, `accessToken`, or `client`."
+      "onedrive adapter: missing auth. Pass `clientCredentials`, `oauth`, `accessToken`, or `client`. Env fallbacks: ONEDRIVE_ACCESS_TOKEN, or ONEDRIVE_TENANT_ID + ONEDRIVE_CLIENT_ID + ONEDRIVE_CLIENT_SECRET."
     );
   }
   if (explicitAuthShapes.length > 1) {

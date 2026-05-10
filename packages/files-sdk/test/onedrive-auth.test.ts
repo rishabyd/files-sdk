@@ -15,6 +15,14 @@ import { Client } from "@microsoft/microsoft-graph-client";
 
 import { onedrive } from "../src/onedrive/index.js";
 
+const restoreEnv = (key: string, value: string | undefined): void => {
+  if (value === undefined) {
+    Reflect.deleteProperty(process.env, key);
+  } else {
+    process.env[key] = value;
+  }
+};
+
 // Module-level mocking via mock.module is awkward here because the adapter
 // imports ClientSecretCredential and Client from real packages and we need
 // the real GraphError + ResponseType to remain intact for the sibling
@@ -251,5 +259,74 @@ describe("onedrive auth construction", () => {
     await expect(capturedAuthProvider?.getAccessToken()).rejects.toThrow(
       /missing access_token/iu
     );
+  });
+
+  test("env-var fallback uses ONEDRIVE_ACCESS_TOKEN when no opts are passed", async () => {
+    const prev = process.env.ONEDRIVE_ACCESS_TOKEN;
+    process.env.ONEDRIVE_ACCESS_TOKEN = "env-tok";
+    try {
+      onedrive();
+      expect(await capturedAuthProvider?.getAccessToken()).toBe("env-tok");
+    } finally {
+      restoreEnv("ONEDRIVE_ACCESS_TOKEN", prev);
+    }
+  });
+
+  test("env-var fallback uses ONEDRIVE_TENANT_ID + CLIENT_ID + CLIENT_SECRET", async () => {
+    const prevT = process.env.ONEDRIVE_TENANT_ID;
+    const prevC = process.env.ONEDRIVE_CLIENT_ID;
+    const prevS = process.env.ONEDRIVE_CLIENT_SECRET;
+    const prevD = process.env.ONEDRIVE_DRIVE_ID;
+    process.env.ONEDRIVE_TENANT_ID = "tenant-env";
+    process.env.ONEDRIVE_CLIENT_ID = "cid-env";
+    process.env.ONEDRIVE_CLIENT_SECRET = "sec-env";
+    process.env.ONEDRIVE_DRIVE_ID = "drive-env";
+    try {
+      onedrive();
+      expect(await capturedAuthProvider?.getAccessToken()).toBe(
+        "cs-token:tenant-env"
+      );
+    } finally {
+      restoreEnv("ONEDRIVE_TENANT_ID", prevT);
+      restoreEnv("ONEDRIVE_CLIENT_ID", prevC);
+      restoreEnv("ONEDRIVE_CLIENT_SECRET", prevS);
+      restoreEnv("ONEDRIVE_DRIVE_ID", prevD);
+    }
+  });
+
+  test("env-var clientCredentials still requires a target (driveId/siteId/userId)", () => {
+    const prevT = process.env.ONEDRIVE_TENANT_ID;
+    const prevC = process.env.ONEDRIVE_CLIENT_ID;
+    const prevS = process.env.ONEDRIVE_CLIENT_SECRET;
+    process.env.ONEDRIVE_TENANT_ID = "tenant-env";
+    process.env.ONEDRIVE_CLIENT_ID = "cid-env";
+    process.env.ONEDRIVE_CLIENT_SECRET = "sec-env";
+    try {
+      expect(() => onedrive()).toThrow(
+        /clientCredentials auth requires `driveId`/iu
+      );
+    } finally {
+      restoreEnv("ONEDRIVE_TENANT_ID", prevT);
+      restoreEnv("ONEDRIVE_CLIENT_ID", prevC);
+      restoreEnv("ONEDRIVE_CLIENT_SECRET", prevS);
+    }
+  });
+
+  test("env ONEDRIVE_DRIVE_ID populates basePath", () => {
+    const prevTok = process.env.ONEDRIVE_ACCESS_TOKEN;
+    const prevD = process.env.ONEDRIVE_DRIVE_ID;
+    process.env.ONEDRIVE_ACCESS_TOKEN = "env-tok";
+    process.env.ONEDRIVE_DRIVE_ID = "drive-xyz";
+    try {
+      const adapter = onedrive();
+      expect(adapter.basePath).toBe("/drives/drive-xyz");
+    } finally {
+      restoreEnv("ONEDRIVE_ACCESS_TOKEN", prevTok);
+      restoreEnv("ONEDRIVE_DRIVE_ID", prevD);
+    }
+  });
+
+  test("missing auth + no env vars throws", () => {
+    expect(() => onedrive()).toThrow(/missing auth/iu);
   });
 });

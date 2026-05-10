@@ -62,14 +62,7 @@ const ADAPTERS = [
     label: "GCS",
   },
   {
-    config: `googleDrive({
-    credentials: {
-      client_email: process.env.GOOGLE_DRIVE_CLIENT_EMAIL!,
-      private_key: process.env.GOOGLE_DRIVE_PRIVATE_KEY!,
-    },
-    driveId: process.env.GOOGLE_DRIVE_ID!,
-    rootFolderId: process.env.GOOGLE_DRIVE_ID!,
-  })`,
+    config: `googleDrive()`,
     id: "google-drive",
     import: `import { googleDrive } from "files-sdk/google-drive";`,
     label: "Google Drive",
@@ -81,14 +74,7 @@ const ADAPTERS = [
     label: "Azure",
   },
   {
-    config: `onedrive({
-    clientCredentials: {
-      tenantId: process.env.ONEDRIVE_TENANT_ID!,
-      clientId: process.env.ONEDRIVE_CLIENT_ID!,
-      clientSecret: process.env.ONEDRIVE_CLIENT_SECRET!,
-    },
-    driveId: process.env.ONEDRIVE_DRIVE_ID!,
-  })`,
+    config: `onedrive()`,
     id: "onedrive",
     import: `import { onedrive } from "files-sdk/onedrive";`,
     label: "OneDrive",
@@ -100,13 +86,13 @@ const ADAPTERS = [
     label: "Supabase",
   },
   {
-    config: `dropbox({ accessToken: process.env.DROPBOX_TOKEN! })`,
+    config: `dropbox()`,
     id: "dropbox",
     import: `import { dropbox } from "files-sdk/dropbox";`,
     label: "Dropbox",
   },
   {
-    config: `box({ developerToken: process.env.BOX_TOKEN! })`,
+    config: `box()`,
     id: "box",
     import: `import { box } from "files-sdk/box";`,
     label: "Box",

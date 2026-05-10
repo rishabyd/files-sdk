@@ -11,11 +11,11 @@ import { onedrive } from "files-sdk/onedrive";
 const files = new Files({
   adapter: onedrive({
     clientCredentials: {
-      tenantId: process.env.MS_TENANT_ID!,
-      clientId: process.env.MS_CLIENT_ID!,
-      clientSecret: process.env.MS_CLIENT_SECRET!,
+      tenantId: process.env.ONEDRIVE_TENANT_ID!,
+      clientId: process.env.ONEDRIVE_CLIENT_ID!,
+      clientSecret: process.env.ONEDRIVE_CLIENT_SECRET!,
     },
-    siteId: process.env.MS_SITE_ID!,
+    siteId: process.env.ONEDRIVE_SITE_ID!,
     rootFolderPath: "Uploads",
     // publicByDefault: true → upload() also creates an anonymous-view
     //                       sharing link and url() returns its webUrl.
@@ -32,11 +32,12 @@ export const Onedrive = () => (
       <code>@microsoft/microsoft-graph-client</code> SDK. Microsoft Graph is
       path-addressable (<code>/drive/root:/folder/file.txt</code>), so the
       adapter maps virtual keys onto real OneDrive paths — no virtual-key cache,
-      no <code>fsdkKey</code> bookkeeping. Four auth shapes (app-only, OAuth
-      refresh token, raw access token, pre-built Graph client) and four drive
-      targets (<code>/me/drive</code>, <code>driveId</code>, <code>siteId</code>
-      , <code>userId</code>) cover the personal-OneDrive, OneDrive-for-Business,
-      and SharePoint-site-library cases.
+      no <code>fsdkKey</code> bookkeeping. Five auth shapes (app-only, OAuth
+      refresh token, raw access token, pre-built Graph client, or env-var
+      fallback) and four drive targets (<code>/me/drive</code>,{" "}
+      <code>driveId</code>, <code>siteId</code>, <code>userId</code>) cover the
+      personal-OneDrive, OneDrive-for-Business, and SharePoint-site-library
+      cases.
     </p>
     <CodeBlock code={ONEDRIVE_EXAMPLE} lang="ts" />
     <div className="flex flex-col gap-2">
@@ -55,7 +56,9 @@ export const Onedrive = () => (
             unattended SharePoint or OneDrive-for-Business access; the app acts
             on its own behalf. Cannot target <code>/me/drive</code> — pass{" "}
             <code>driveId</code>, <code>siteId</code>, or <code>userId</code> to
-            specify the drive.
+            specify the drive. Falls back to the <code>ONEDRIVE_TENANT_ID</code>{" "}
+            + <code>ONEDRIVE_CLIENT_ID</code> +{" "}
+            <code>ONEDRIVE_CLIENT_SECRET</code> environment variables.
           </p>
         </PropAccordionItem>
         <PropAccordionItem name="oauth" status="optional" value="oauth">
@@ -76,7 +79,9 @@ export const Onedrive = () => (
             Static or dynamic access token — a string for one-shot tokens, or an
             async function for callers minting tokens themselves (
             <code>@azure/identity</code>, NextAuth, custom brokers). The adapter
-            does not cache; your callable owns refresh.
+            does not cache; your callable owns refresh. Falls back to the{" "}
+            <code>ONEDRIVE_ACCESS_TOKEN</code> environment variable (string form
+            only).
           </p>
         </PropAccordionItem>
         <PropAccordionItem name="client" status="optional" value="client">
@@ -95,14 +100,16 @@ export const Onedrive = () => (
             ). Works with any auth shape and is required for{" "}
             <code>clientCredentials</code> since <code>/me/drive</code> needs an
             interactive user. Mutually exclusive with <code>siteId</code> /{" "}
-            <code>userId</code>.
+            <code>userId</code>. Falls back to the{" "}
+            <code>ONEDRIVE_DRIVE_ID</code> environment variable.
           </p>
         </PropAccordionItem>
         <PropAccordionItem name="siteId" status="optional" value="siteId">
           <p>
             Target the default document library of a SharePoint site (
             <code>/sites/{"{siteId}"}/drive</code>). Mutually exclusive with{" "}
-            <code>driveId</code> / <code>userId</code>.
+            <code>driveId</code> / <code>userId</code>. Falls back to the{" "}
+            <code>ONEDRIVE_SITE_ID</code> environment variable.
           </p>
         </PropAccordionItem>
         <PropAccordionItem name="userId" status="optional" value="userId">
@@ -110,6 +117,8 @@ export const Onedrive = () => (
             Target a specific user's drive (
             <code>/users/{"{userId}"}/drive</code>). Typical with app-only auth.
             Mutually exclusive with <code>driveId</code> / <code>siteId</code>.
+            Falls back to the <code>ONEDRIVE_USER_ID</code> environment
+            variable.
           </p>
         </PropAccordionItem>
         <PropAccordionItem
