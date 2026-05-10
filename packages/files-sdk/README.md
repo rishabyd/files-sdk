@@ -35,74 +35,9 @@ Swap the adapter import (`files-sdk/r2`, `files-sdk/gcs`, `files-sdk/azure`, …
 
 A growing catalog covering S3 and S3-compatible stores, the major cloud blob platforms, edge/serverless blob services, the local filesystem, and consumer file providers. See [files-sdk.dev](https://files-sdk.dev) for the current list and per-adapter setup.
 
-## AI SDK tools
+## AI tools
 
-The `files-sdk/ai-sdk` subpath wraps a configured `Files` instance as a set of [Vercel AI SDK](https://ai-sdk.dev) tools — drop them into `generateText`, `streamText`, or any agent and the model can browse, read, and (optionally) mutate your bucket through the same unified surface as your application code.
-
-```ts
-import { Files } from "files-sdk";
-import { s3 } from "files-sdk/s3";
-import { createFileTools } from "files-sdk/ai-sdk";
-import { generateText } from "ai";
-
-const files = new Files({ adapter: s3({ bucket: "uploads" }) });
-
-await generateText({
-  model: yourModel,
-  tools: createFileTools({ files }),
-  prompt: "Find every CSV under reports/ and summarize the latest one.",
-});
-```
-
-Eight tools are returned by default — `listFiles`, `getFileMetadata`, `downloadFile`, `getFileUrl` (read) and `uploadFile`, `deleteFile`, `copyFile`, `signUploadUrl` (write). Write tools require user approval by default; pass `requireApproval: false` to disable globally, an object keyed by tool name for fine-grained control, or `readOnly: true` to strip writes entirely. `ai` and `zod` are optional peer dependencies — install them only when consuming this subpath.
-
-For full details — installation, approval control, read-only mode, the per-tool input/output shapes, overrides, and cherry-picking individual factories — see [`src/ai-sdk/README.md`](src/ai-sdk/README.md) or the [AI SDK tools section](https://files-sdk.dev/#ai-sdk-tools) of the docs site.
-
-## OpenAI tools
-
-The `files-sdk/openai` subpath ships two factories targeting OpenAI directly — one for the native [Responses API](https://platform.openai.com/docs/api-reference/responses) and one for the [OpenAI Agents SDK](https://openai.github.io/openai-agents-js/) (`@openai/agents`). Both wrap the same eight file operations as the AI SDK subpath with the same approval-gating defaults.
-
-```ts
-// Responses API loop
-import OpenAI from "openai";
-import { Files } from "files-sdk";
-import { createResponsesFileTools } from "files-sdk/openai";
-
-const client = new OpenAI();
-const ft = createResponsesFileTools({ files: new Files({ adapter }) });
-
-const res = await client.responses.create({
-  model: "gpt-4.1",
-  input: "List my files.",
-  tools: ft.definitions,
-});
-for (const item of res.output) {
-  if (item.type === "function_call") {
-    if (ft.needsApproval(item.name)) {
-      // surface approval UX
-    }
-    const out = await ft.execute(item);
-    // out is a function_call_output to push into the next turn's input
-  }
-}
-```
-
-```ts
-// Agents SDK
-import { Agent, run } from "@openai/agents";
-import { createAgentsFileTools } from "files-sdk/openai";
-
-const tools = createAgentsFileTools({ files: new Files({ adapter }) });
-const agent = new Agent({
-  name: "Files agent",
-  tools: Object.values(tools),
-});
-const result = await run(agent, "List my files.");
-```
-
-`openai` and `@openai/agents` are optional peer dependencies — install only the one(s) you use. The subpath requires Zod 4 (`@openai/agents` peer-requires it, and Zod 4's built-in JSON Schema converter powers the Responses tool definitions).
-
-For full details see [`src/openai/README.md`](src/openai/README.md).
+A growing set of subpaths wrap a configured `Files` instance as ready-made tools for popular AI SDKs — currently the [Vercel AI SDK](https://ai-sdk.dev) (`files-sdk/ai-sdk`) and OpenAI's [Responses API](https://platform.openai.com/docs/api-reference/responses) and [Agents SDK](https://openai.github.io/openai-agents-js/) (`files-sdk/openai`). All share the same file operations and approval-gating defaults, so models can browse, read, and (optionally) mutate your bucket through the same unified surface as your application code. See [files-sdk.dev](https://files-sdk.dev) for the current list and per-SDK setup.
 
 ## License
 
