@@ -55,6 +55,19 @@ const sections: Section[] = [
   { id: "the-storedfile-type", label: "The StoredFile type" },
   { id: "errors", label: "Errors" },
   { id: "escape-hatch", label: "Escape hatch" },
+  {
+    children: [
+      { id: "ai-sdk-tools-installation", label: "Installation" },
+      { id: "ai-sdk-tools-quick-start", label: "Quick start" },
+      { id: "ai-sdk-tools-approval", label: "Approval control" },
+      { id: "ai-sdk-tools-read-only", label: "Read-only mode" },
+      { id: "ai-sdk-tools-surface", label: "Tool surface" },
+      { id: "ai-sdk-tools-overrides", label: "Overrides" },
+      { id: "ai-sdk-tools-cherry-pick", label: "Cherry-picking tools" },
+    ],
+    id: "ai-sdk-tools",
+    label: "AI SDK tools",
+  },
   { id: "compatibility-matrix", label: "Compatibility matrix" },
 ];
 

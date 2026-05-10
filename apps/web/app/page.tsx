@@ -2,6 +2,7 @@ import { Demo } from "@/components/demo";
 import { FadeIn } from "@/components/fade-in";
 import { MobileTableOfContents } from "@/components/mobile-table-of-contents";
 import { Adapters } from "@/components/sections/adapters";
+import { AiSdkTools } from "@/components/sections/ai-sdk-tools";
 import { ApiReference } from "@/components/sections/api-reference";
 import { CompatibilityMatrix } from "@/components/sections/compatibility-matrix";
 import { Errors } from "@/components/sections/errors";
@@ -52,6 +53,9 @@ export default function Home() {
           </FadeIn>
           <FadeIn>
             <EscapeHatch />
+          </FadeIn>
+          <FadeIn>
+            <AiSdkTools />
           </FadeIn>
           <FadeIn>
             <CompatibilityMatrix />
