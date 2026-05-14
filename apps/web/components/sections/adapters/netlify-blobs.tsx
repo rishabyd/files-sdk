@@ -21,7 +21,7 @@ const files = new Files({
 
 export const NetlifyBlobs = () => (
   <section>
-    <Heading as="h3" id="adapter-netlify-blobs">
+    <Heading as="h2" id="adapter-netlify-blobs">
       Netlify Blobs
     </Heading>
     <p>
@@ -43,7 +43,7 @@ export const NetlifyBlobs = () => (
       adapters.
     </p>
     <div className="flex flex-col gap-2">
-      <Heading as="h4" id="adapter-netlify-blobs-options">
+      <Heading as="h3" id="adapter-netlify-blobs-options">
         Options
       </Heading>
       <Accordion className="rounded-md border-dotted" type="multiple">
@@ -94,7 +94,7 @@ export const NetlifyBlobs = () => (
       </Accordion>
     </div>
     <div className="flex flex-col gap-2">
-      <Heading as="h4" id="adapter-netlify-blobs-limitations">
+      <Heading as="h3" id="adapter-netlify-blobs-limitations">
         Limitations
       </Heading>
       <p>

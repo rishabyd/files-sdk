@@ -17,7 +17,7 @@ const files = new Files({
 
 export const BackblazeB2 = () => (
   <section>
-    <Heading as="h3" id="adapter-backblaze-b2">
+    <Heading as="h2" id="adapter-backblaze-b2">
       Backblaze B2
     </Heading>
     <p>
@@ -31,7 +31,7 @@ export const BackblazeB2 = () => (
     </p>
     <CodeBlock code={B2_EXAMPLE} lang="ts" />
     <div className="flex flex-col gap-2">
-      <Heading as="h4" id="adapter-backblaze-b2-options">
+      <Heading as="h3" id="adapter-backblaze-b2-options">
         Options
       </Heading>
       <Accordion className="rounded-md border-dotted" type="multiple">

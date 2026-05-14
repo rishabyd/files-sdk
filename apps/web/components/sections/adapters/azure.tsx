@@ -17,7 +17,7 @@ const files = new Files({
 
 export const Azure = () => (
   <section>
-    <Heading as="h3" id="adapter-azure">
+    <Heading as="h2" id="adapter-azure">
       Azure Blob Storage
     </Heading>
     <p>
@@ -29,7 +29,7 @@ export const Azure = () => (
     </p>
     <CodeBlock code={AZURE_EXAMPLE} lang="ts" />
     <div className="flex flex-col gap-2">
-      <Heading as="h4" id="adapter-azure-options">
+      <Heading as="h3" id="adapter-azure-options">
         Options
       </Heading>
       <Accordion className="rounded-md border-dotted" type="multiple">
@@ -114,7 +114,7 @@ export const Azure = () => (
       </Accordion>
     </div>
     <div className="flex flex-col gap-2">
-      <Heading as="h4" id="adapter-azure-limitations">
+      <Heading as="h3" id="adapter-azure-limitations">
         Limitations
       </Heading>
       <p>

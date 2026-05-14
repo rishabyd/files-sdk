@@ -74,13 +74,9 @@ await fetch(upload.url, { method: "POST", body: form });`;
 
 export const ApiReference = () => (
   <section>
-    <Heading as="h2">API reference</Heading>
-    <p>
-      Every method is available on the <code>Files</code> instance. The unified
-      surface only covers what every adapter can do cleanly — anything
-      provider-specific lives on <code>files.raw</code>.
-    </p>
-
+    <Heading as="h2" id="functions">
+      Functions
+    </Heading>
     <section>
       <Heading as="h3" id="files-upload">
         files.upload(key, body, options?)

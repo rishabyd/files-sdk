@@ -30,7 +30,7 @@ const files = new Files({
 
 export const Box = () => (
   <section>
-    <Heading as="h3" id="adapter-box">
+    <Heading as="h2" id="adapter-box">
       Box
     </Heading>
     <p>
@@ -45,7 +45,7 @@ export const Box = () => (
     </p>
     <CodeBlock code={BOX_EXAMPLE} lang="ts" />
     <div className="flex flex-col gap-2">
-      <Heading as="h4" id="adapter-box-options">
+      <Heading as="h3" id="adapter-box-options">
         Options
       </Heading>
       <Accordion className="rounded-md border-dotted" type="multiple">
@@ -155,7 +155,7 @@ export const Box = () => (
       </Accordion>
     </div>
     <div className="flex flex-col gap-2">
-      <Heading as="h4" id="adapter-box-limitations">
+      <Heading as="h3" id="adapter-box-limitations">
         Limitations
       </Heading>
       <p>

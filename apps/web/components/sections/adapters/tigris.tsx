@@ -18,7 +18,7 @@ const files = new Files({
 
 export const Tigris = () => (
   <section>
-    <Heading as="h3" id="adapter-tigris">
+    <Heading as="h2" id="adapter-tigris">
       Tigris
     </Heading>
     <p>
@@ -32,7 +32,7 @@ export const Tigris = () => (
     </p>
     <CodeBlock code={TIGRIS_EXAMPLE} lang="ts" />
     <div className="flex flex-col gap-2">
-      <Heading as="h4" id="adapter-tigris-options">
+      <Heading as="h3" id="adapter-tigris-options">
         Options
       </Heading>
       <Accordion className="rounded-md border-dotted" type="multiple">

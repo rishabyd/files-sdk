@@ -26,7 +26,7 @@ const files = new Files({
 
 export const GoogleDrive = () => (
   <section>
-    <Heading as="h3" id="adapter-google-drive">
+    <Heading as="h2" id="adapter-google-drive">
       Google Drive
     </Heading>
     <p>
@@ -41,7 +41,7 @@ export const GoogleDrive = () => (
     </p>
     <CodeBlock code={GOOGLE_DRIVE_EXAMPLE} lang="ts" />
     <div className="flex flex-col gap-2">
-      <Heading as="h4" id="adapter-google-drive-options">
+      <Heading as="h3" id="adapter-google-drive-options">
         Options
       </Heading>
       <Accordion className="rounded-md border-dotted" type="multiple">
@@ -155,7 +155,7 @@ export const GoogleDrive = () => (
       </Accordion>
     </div>
     <div className="flex flex-col gap-2">
-      <Heading as="h4" id="adapter-google-drive-limitations">
+      <Heading as="h3" id="adapter-google-drive-limitations">
         Limitations
       </Heading>
       <p>

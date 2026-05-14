@@ -20,7 +20,7 @@ const files = new Files({
 
 export const Uploadthing = () => (
   <section>
-    <Heading as="h3" id="adapter-uploadthing">
+    <Heading as="h2" id="adapter-uploadthing">
       UploadThing
     </Heading>
     <p>
@@ -32,7 +32,7 @@ export const Uploadthing = () => (
     </p>
     <CodeBlock code={UPLOADTHING_EXAMPLE} lang="ts" />
     <div className="flex flex-col gap-2">
-      <Heading as="h4" id="adapter-uploadthing-options">
+      <Heading as="h3" id="adapter-uploadthing-options">
         Options
       </Heading>
       <Accordion className="rounded-md border-dotted" type="multiple">
@@ -101,7 +101,7 @@ export const Uploadthing = () => (
       </Accordion>
     </div>
     <div className="flex flex-col gap-2">
-      <Heading as="h4" id="adapter-uploadthing-limitations">
+      <Heading as="h3" id="adapter-uploadthing-limitations">
         Limitations
       </Heading>
       <p>

@@ -117,7 +117,7 @@ createAgentsFileTools({ files, readOnly: true });
 
 export const Openai = () => (
   <section>
-    <Heading as="h3" id="openai-tools">
+    <Heading as="h2" id="openai-tools">
       OpenAI
     </Heading>
     <p>
@@ -152,7 +152,7 @@ export const Openai = () => (
     </p>
 
     <section>
-      <Heading as="h4" id="openai-tools-responses">
+      <Heading as="h3" id="openai-tools-responses">
         Responses API
       </Heading>
       <p>
@@ -177,7 +177,7 @@ export const Openai = () => (
     </section>
 
     <section>
-      <Heading as="h4" id="openai-tools-agents">
+      <Heading as="h3" id="openai-tools-agents">
         Agents SDK
       </Heading>
       <p>
@@ -200,7 +200,7 @@ export const Openai = () => (
     </section>
 
     <section>
-      <Heading as="h4" id="openai-tools-options">
+      <Heading as="h3" id="openai-tools-options">
         Approval, read-only, overrides
       </Heading>
       <p>

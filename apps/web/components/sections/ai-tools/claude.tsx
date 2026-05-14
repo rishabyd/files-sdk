@@ -112,7 +112,7 @@ const server = createSdkMcpServer({
 
 export const Claude = () => (
   <section>
-    <Heading as="h3" id="claude-tools">
+    <Heading as="h2" id="claude-tools">
       Claude Agent SDK
     </Heading>
     <p>
@@ -139,14 +139,14 @@ export const Claude = () => (
     </p>
 
     <section>
-      <Heading as="h4" id="claude-tools-installation">
+      <Heading as="h3" id="claude-tools-installation">
         Installation
       </Heading>
       <CodeTabs tabs={INSTALL_TABS} />
     </section>
 
     <section>
-      <Heading as="h4" id="claude-tools-quick-start">
+      <Heading as="h3" id="claude-tools-quick-start">
         Quick start
       </Heading>
       <p>
@@ -164,7 +164,7 @@ export const Claude = () => (
     </section>
 
     <section>
-      <Heading as="h4" id="claude-tools-approval">
+      <Heading as="h3" id="claude-tools-approval">
         Approval control
       </Heading>
       <p>
@@ -186,7 +186,7 @@ export const Claude = () => (
     </section>
 
     <section>
-      <Heading as="h4" id="claude-tools-read-only">
+      <Heading as="h3" id="claude-tools-read-only">
         Read-only mode
       </Heading>
       <p>
@@ -198,7 +198,7 @@ export const Claude = () => (
     </section>
 
     <section>
-      <Heading as="h4" id="claude-tools-server-name">
+      <Heading as="h3" id="claude-tools-server-name">
         Server name
       </Heading>
       <p>
@@ -212,7 +212,7 @@ export const Claude = () => (
     </section>
 
     <section>
-      <Heading as="h4" id="claude-tools-cherry-pick">
+      <Heading as="h3" id="claude-tools-cherry-pick">
         Cherry-picking tools
       </Heading>
       <p>

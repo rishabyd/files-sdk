@@ -9,7 +9,7 @@ const files = new Files({ adapter: vercelBlob() });`;
 
 export const VercelBlob = () => (
   <section>
-    <Heading as="h3" id="adapter-vercel-blob">
+    <Heading as="h2" id="adapter-vercel-blob">
       Vercel Blob
     </Heading>
     <p>
@@ -34,7 +34,7 @@ export const VercelBlob = () => (
       <code>url()</code> throws. Need both? Use two adapters.
     </p>
     <div className="flex flex-col gap-2">
-      <Heading as="h4" id="adapter-vercel-blob-limitations">
+      <Heading as="h3" id="adapter-vercel-blob-limitations">
         Limitations
       </Heading>
       <p>

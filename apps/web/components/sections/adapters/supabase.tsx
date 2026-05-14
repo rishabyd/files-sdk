@@ -18,7 +18,7 @@ const files = new Files({
 
 export const Supabase = () => (
   <section>
-    <Heading as="h3" id="adapter-supabase">
+    <Heading as="h2" id="adapter-supabase">
       Supabase Storage
     </Heading>
     <p>
@@ -29,7 +29,7 @@ export const Supabase = () => (
     </p>
     <CodeBlock code={SUPABASE_EXAMPLE} lang="ts" />
     <div className="flex flex-col gap-2">
-      <Heading as="h4" id="adapter-supabase-options">
+      <Heading as="h3" id="adapter-supabase-options">
         Options
       </Heading>
       <Accordion className="rounded-md border-dotted" type="multiple">
@@ -105,7 +105,7 @@ export const Supabase = () => (
       </Accordion>
     </div>
     <div className="flex flex-col gap-2">
-      <Heading as="h4" id="adapter-supabase-limitations">
+      <Heading as="h3" id="adapter-supabase-limitations">
         Limitations
       </Heading>
       <p>

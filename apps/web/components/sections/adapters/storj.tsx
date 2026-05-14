@@ -18,7 +18,7 @@ const files = new Files({
 
 export const Storj = () => (
   <section>
-    <Heading as="h3" id="adapter-storj">
+    <Heading as="h2" id="adapter-storj">
       Storj
     </Heading>
     <p>
@@ -31,7 +31,7 @@ export const Storj = () => (
     </p>
     <CodeBlock code={STORJ_EXAMPLE} lang="ts" />
     <div className="flex flex-col gap-2">
-      <Heading as="h4" id="adapter-storj-options">
+      <Heading as="h3" id="adapter-storj-options">
         Options
       </Heading>
       <Accordion className="rounded-md border-dotted" type="multiple">

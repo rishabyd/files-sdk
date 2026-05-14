@@ -17,7 +17,7 @@ const files = new Files({
 
 export const DigitalOceanSpaces = () => (
   <section>
-    <Heading as="h3" id="adapter-digitalocean-spaces">
+    <Heading as="h2" id="adapter-digitalocean-spaces">
       DigitalOcean Spaces
     </Heading>
     <p>
@@ -28,7 +28,7 @@ export const DigitalOceanSpaces = () => (
     </p>
     <CodeBlock code={DIGITALOCEAN_SPACES_EXAMPLE} lang="ts" />
     <div className="flex flex-col gap-2">
-      <Heading as="h4" id="adapter-digitalocean-spaces-options">
+      <Heading as="h3" id="adapter-digitalocean-spaces-options">
         Options
       </Heading>
       <Accordion className="rounded-md border-dotted" type="multiple">

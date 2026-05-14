@@ -18,7 +18,7 @@ const files = new Files({
 
 export const Gcs = () => (
   <section>
-    <Heading as="h3" id="adapter-gcs">
+    <Heading as="h2" id="adapter-gcs">
       Google Cloud Storage
     </Heading>
     <p>
@@ -28,7 +28,7 @@ export const Gcs = () => (
     </p>
     <CodeBlock code={GCS_EXAMPLE} lang="ts" />
     <div className="flex flex-col gap-2">
-      <Heading as="h4" id="adapter-gcs-options">
+      <Heading as="h3" id="adapter-gcs-options">
         Options
       </Heading>
       <Accordion className="rounded-md border-dotted" type="multiple">

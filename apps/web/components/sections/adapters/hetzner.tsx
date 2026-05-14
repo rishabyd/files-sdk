@@ -17,7 +17,7 @@ const files = new Files({
 
 export const Hetzner = () => (
   <section>
-    <Heading as="h3" id="adapter-hetzner">
+    <Heading as="h2" id="adapter-hetzner">
       Hetzner Object Storage
     </Heading>
     <p>
@@ -31,7 +31,7 @@ export const Hetzner = () => (
     </p>
     <CodeBlock code={HETZNER_EXAMPLE} lang="ts" />
     <div className="flex flex-col gap-2">
-      <Heading as="h4" id="adapter-hetzner-options">
+      <Heading as="h3" id="adapter-hetzner-options">
         Options
       </Heading>
       <Accordion className="rounded-md border-dotted" type="multiple">

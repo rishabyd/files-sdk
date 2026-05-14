@@ -17,7 +17,7 @@ const files = new Files({
 
 export const Akamai = () => (
   <section>
-    <Heading as="h3" id="adapter-akamai">
+    <Heading as="h2" id="adapter-akamai">
       Akamai Cloud Object Storage
     </Heading>
     <p>
@@ -33,7 +33,7 @@ export const Akamai = () => (
     </p>
     <CodeBlock code={AKAMAI_EXAMPLE} lang="ts" />
     <div className="flex flex-col gap-2">
-      <Heading as="h4" id="adapter-akamai-options">
+      <Heading as="h3" id="adapter-akamai-options">
         Options
       </Heading>
       <Accordion className="rounded-md border-dotted" type="multiple">

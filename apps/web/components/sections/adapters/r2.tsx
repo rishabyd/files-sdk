@@ -28,7 +28,7 @@ const files = new Files({
 
 export const R2 = () => (
   <section>
-    <Heading as="h3" id="adapter-r2">
+    <Heading as="h2" id="adapter-r2">
       Cloudflare R2
     </Heading>
     <p>
@@ -43,7 +43,7 @@ export const R2 = () => (
       custom domain bound to the bucket. When set, <code>url()</code> returns{" "}
       <code>{`\`\${publicBaseUrl}/\${key}\``}</code> and skips signing.
     </p>
-    <Heading as="h4" id="adapter-r2-hybrid">
+    <Heading as="h3" id="adapter-r2-hybrid">
       Hybrid: binding + HTTP credentials
     </Heading>
     <p>

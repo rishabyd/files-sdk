@@ -23,7 +23,7 @@ const files = new Files({
 
 export const Dropbox = () => (
   <section>
-    <Heading as="h3" id="adapter-dropbox">
+    <Heading as="h2" id="adapter-dropbox">
       Dropbox
     </Heading>
     <p>
@@ -36,7 +36,7 @@ export const Dropbox = () => (
     </p>
     <CodeBlock code={DROPBOX_EXAMPLE} lang="ts" />
     <div className="flex flex-col gap-2">
-      <Heading as="h4" id="adapter-dropbox-options">
+      <Heading as="h3" id="adapter-dropbox-options">
         Options
       </Heading>
       <Accordion className="rounded-md border-dotted" type="multiple">
@@ -143,7 +143,7 @@ export const Dropbox = () => (
       </Accordion>
     </div>
     <div className="flex flex-col gap-2">
-      <Heading as="h4" id="adapter-dropbox-limitations">
+      <Heading as="h3" id="adapter-dropbox-limitations">
         Limitations
       </Heading>
       <p>
