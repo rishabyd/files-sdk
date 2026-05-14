@@ -20,7 +20,7 @@ const AdaptersPage = () => (
   <>
     <PageHero
       title="Adapters"
-      description="Each adapter is a subpath import. Bring only what you use; the others tree-shake away. Adapters auto-load credentials from the standard environment variables for that provider - pass options explicitly to override. If an adapter is constructed without enough info to authenticate, it throws at construction time naming the missing variable."
+      description="Subpath imports per provider - tree-shake what you don't use. Credentials auto-load from standard env vars; missing ones throw at construction with the variable name."
     />
     <FadeIn className="lg:hidden">
       <MobileTableOfContents sections={mobileSections} />

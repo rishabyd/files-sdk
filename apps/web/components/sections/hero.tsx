@@ -85,7 +85,18 @@ export const Hero = () => (
           </Tooltip>
         );
       })}
-      <span className="text-muted-foreground text-xs ml-3">+ 7 more</span>
+      <motion.span
+        className="text-muted-foreground text-xs ml-3"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{
+          delay: 0.05 * iconList.length,
+          duration: 0.5,
+          ease: EASE,
+        }}
+      >
+        + 7 more
+      </motion.span>
     </div>
   </section>
 );
