@@ -85,7 +85,7 @@ export const Hero = () => (
           </Tooltip>
         );
       })}
-      <span className="text-muted-foreground text-xs ml-3">+ 6 more</span>
+      <span className="text-muted-foreground text-xs ml-3">+ 7 more</span>
     </div>
   </section>
 );
