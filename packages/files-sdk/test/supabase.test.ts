@@ -259,6 +259,11 @@ describe("supabase adapter", () => {
       expect(StorageClientStub.lastInit?.url).toBe(STORAGE_URL);
     });
 
+    test("strips trailing slashes from project URL before appending suffix", () => {
+      supabase({ bucket: BUCKET, key: KEY, url: `${PROJECT_URL}///` });
+      expect(StorageClientStub.lastInit?.url).toBe(STORAGE_URL);
+    });
+
     test("accepts a SupabaseClient-like object via `client`", () => {
       const fakeStorage = { from: () => bucketRef } as never;
       const adapter = supabase({
