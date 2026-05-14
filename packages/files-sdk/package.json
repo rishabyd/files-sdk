@@ -158,6 +158,7 @@
   "scripts": {
     "build": "NODE_OPTIONS='--max-old-space-size=8192' tsup",
     "dev": "tsup --watch",
+    "size": "bun run scripts/size.ts",
     "test": "bun test",
     "test:coverage": "bun test --coverage",
     "types": "tsgo --noEmit"
