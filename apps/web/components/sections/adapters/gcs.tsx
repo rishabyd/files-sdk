@@ -9,7 +9,7 @@ import { gcs } from "files-sdk/gcs";
 const files = new Files({
   adapter: gcs({
     bucket: "uploads",
-    // No credentials needed in most setups — the @google-cloud/storage
+    // No credentials needed in most setups - the @google-cloud/storage
     // SDK auto-discovers Application Default Credentials from
     // GOOGLE_APPLICATION_CREDENTIALS, gcloud auth, or the runtime
     // service account on Cloud Run / GKE / GCE.
@@ -23,7 +23,7 @@ export const Gcs = () => (
     </Heading>
     <p>
       Google Cloud Storage via the official <code>@google-cloud/storage</code>{" "}
-      SDK. Auth follows the standard Google chain — Application Default
+      SDK. Auth follows the standard Google chain - Application Default
       Credentials by default, with explicit overrides if you need them.
     </p>
     <CodeBlock code={GCS_EXAMPLE} lang="ts" />
@@ -49,7 +49,7 @@ export const Gcs = () => (
         >
           <p>
             Path to a service-account JSON file. Takes precedence over ADC when
-            set. Use this when ADC isn't available — typically outside GCP
+            set. Use this when ADC isn't available - typically outside GCP
             runtimes.
           </p>
         </PropAccordionItem>
@@ -59,7 +59,7 @@ export const Gcs = () => (
           value="credentials"
         >
           <p>
-            Inline service-account credentials —{" "}
+            Inline service-account credentials -{" "}
             <code>{"{ client_email, private_key }"}</code>. Useful when you only
             have those fields as separate env vars (Vercel, Netlify) and don't
             want to materialize a JSON file. <code>url()</code> and{" "}

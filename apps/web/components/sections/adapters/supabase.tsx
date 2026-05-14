@@ -35,7 +35,7 @@ export const Supabase = () => (
       <Accordion className="rounded-md border-dotted" type="multiple">
         <PropAccordionItem name="bucket" status="required" value="bucket">
           <p>
-            Supabase storage bucket. Must already exist — this SDK does not
+            Supabase storage bucket. Must already exist - this SDK does not
             create buckets.
           </p>
         </PropAccordionItem>
@@ -45,7 +45,7 @@ export const Supabase = () => (
             postgrest). Highest-precedence credential. Pass either a{" "}
             <code>StorageClient</code> from <code>@supabase/storage-js</code> or
             a <code>SupabaseClient</code> from{" "}
-            <code>@supabase/supabase-js</code> — the adapter unwraps{" "}
+            <code>@supabase/supabase-js</code> - the adapter unwraps{" "}
             <code>client.storage</code> automatically.
           </p>
         </PropAccordionItem>
@@ -74,7 +74,7 @@ export const Supabase = () => (
             <code>url()</code> returns the permanent unsigned{" "}
             <code>getPublicUrl()</code> result instead of minting a signed read
             URL. Supabase has no API to detect bucket visibility, so the adapter
-            trusts what you pass — a wrong value yields a 4xx on fetch.
+            trusts what you pass - a wrong value yields a 4xx on fetch.
           </p>
         </PropAccordionItem>
         <PropAccordionItem
@@ -110,11 +110,11 @@ export const Supabase = () => (
       </Heading>
       <p>
         <code>signedUploadUrl()</code> issues PUT-only. <code>maxSize</code>{" "}
-        throws — Supabase signed upload URLs have no{" "}
+        throws - Supabase signed upload URLs have no{" "}
         <code>content-length-range</code> equivalent; set the bucket-level file
         size limit in the Supabase dashboard or enforce caps at your application
         gateway. <code>expiresIn</code> on <code>signedUploadUrl()</code> is
-        ignored — Supabase fixes the TTL at 2 hours server-side.{" "}
+        ignored - Supabase fixes the TTL at 2 hours server-side.{" "}
         <code>list()</code> uses Supabase's V1 offset/limit API; the adapter
         encodes <code>offset</code> as a numeric cursor string so it threads
         through the unified API.

@@ -30,7 +30,7 @@ export const VercelBlob = () => (
       construction. Default <code>"public"</code> matches the existing behavior.
       With <code>access: "private"</code>, uploads use Vercel's private mode and
       reads route through <code>blob.get()</code> with the token instead of a
-      public URL fetch — there is no permanent public URL for private blobs, so{" "}
+      public URL fetch - there is no permanent public URL for private blobs, so{" "}
       <code>url()</code> throws. Need both? Use two adapters.
     </p>
     <div className="flex flex-col gap-2">
@@ -38,13 +38,13 @@ export const VercelBlob = () => (
         Limitations
       </Heading>
       <p>
-        <code>signedUploadUrl()</code> throws — browser uploads go through{" "}
+        <code>signedUploadUrl()</code> throws - browser uploads go through{" "}
         <code>handleUpload()</code> from <code>@vercel/blob/client</code>{" "}
         instead of presigned URLs. <code>url()</code> on public blobs returns
         the permanent CDN URL: <code>expiresIn</code> is silently ignored (no
         signing primitive) and <code>responseContentDisposition</code> throws
         (no override available). On <code>access: "private"</code>,{" "}
-        <code>url()</code> throws because there's no public URL — use{" "}
+        <code>url()</code> throws because there's no public URL - use{" "}
         <code>download()</code> instead. User <code>metadata</code> isn't
         supported by the underlying API, so it round-trips as{" "}
         <code>undefined</code>.

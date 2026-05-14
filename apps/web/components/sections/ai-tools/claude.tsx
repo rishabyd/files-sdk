@@ -48,7 +48,7 @@ for await (const message of query({
   // handle messages
 }`;
 
-const APPROVAL_EXAMPLE = `// All writes require approval (default) — denied by the bundled canUseTool.
+const APPROVAL_EXAMPLE = `// All writes require approval (default) - denied by the bundled canUseTool.
 createClaudeFileTools({ files });
 
 // Disable the approval gate entirely.
@@ -69,7 +69,7 @@ const CUSTOM_CAN_USE_TOOL_EXAMPLE = `import type { CanUseTool } from "@anthropic
 
 const tools = createClaudeFileTools({ files });
 
-// Compose your own canUseTool — needsApproval accepts both bare
+// Compose your own canUseTool - needsApproval accepts both bare
 // names ("uploadFile") and the mcp-prefixed form passed in by the SDK.
 const canUseTool: CanUseTool = async (name, input) => {
   if (tools.needsApproval(name)) {
@@ -87,7 +87,7 @@ createClaudeFileTools({ files, readOnly: true });
 // allowedTools → ["mcp__files__listFiles", "mcp__files__getFileMetadata",
 //                 "mcp__files__downloadFile", "mcp__files__getFileUrl"]`;
 
-const SERVER_NAME_EXAMPLE = `// Override the MCP server name — affects the mcp__<server>__<tool>
+const SERVER_NAME_EXAMPLE = `// Override the MCP server name - affects the mcp__<server>__<tool>
 // prefix the model sees, and the mcpServers map key.
 const tools = createClaudeFileTools({ files, serverName: "storage" });
 // tools.allowedTools → ["mcp__storage__listFiles", ...]
@@ -130,11 +130,11 @@ export const Claude = () => (
       SDK). The Agent SDK consumes tools as an in-process MCP server plus an{" "}
       <code>allowedTools</code> allow-list and a <code>canUseTool</code>{" "}
       approval callback, so <code>createClaudeFileTools</code> returns a bundle
-      of all three — pass them straight into <code>query()</code>.
+      of all three - pass them straight into <code>query()</code>.
     </p>
     <p>
       <code>@anthropic-ai/claude-agent-sdk</code> and <code>zod</code> are
-      optional peer dependencies — only install them if you're consuming this
+      optional peer dependencies - only install them if you're consuming this
       subpath.
     </p>
 
@@ -217,7 +217,7 @@ export const Claude = () => (
       </Heading>
       <p>
         Each tool factory is exported individually as a{" "}
-        <code>SdkMcpToolDefinition</code> — bundle them into your own{" "}
+        <code>SdkMcpToolDefinition</code> - bundle them into your own{" "}
         <code>createSdkMcpServer</code> call when you want full control over the
         MCP server shape or want to mix files-sdk tools with your own.
       </p>

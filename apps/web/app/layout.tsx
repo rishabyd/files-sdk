@@ -24,7 +24,7 @@ const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
 const origin = process.env.VERCEL_PROJECT_PRODUCTION_URL ?? "localhost:3000";
 const baseUrl = `${protocol}://${origin}`;
 
-const title = "Files SDK — One API for S3, R2, GCS, Azure & blob storage";
+const title = "Files SDK - One API for S3, R2, GCS, Azure & blob storage";
 const description =
   "A unified storage SDK for object and blob backends. One small, honest API. Web-standards I/O. An escape hatch when you need the native client.";
 

@@ -22,7 +22,7 @@ export const BackblazeB2 = () => (
     </Heading>
     <p>
       Backblaze B2 via its S3-compatible API. A thin wrapper around the S3
-      adapter — endpoint derived from the cluster code (<code>us-west-002</code>
+      adapter - endpoint derived from the cluster code (<code>us-west-002</code>
       , <code>us-east-005</code>, <code>eu-central-003</code>, …),
       virtual-hosted-style addressing, errors relabelled. Auto-loads from{" "}
       <code>B2_APPLICATION_KEY_ID</code> and <code>B2_APPLICATION_KEY</code>.
@@ -40,12 +40,12 @@ export const BackblazeB2 = () => (
         </PropAccordionItem>
         <PropAccordionItem name="region" status="required" value="region">
           <p>
-            B2 cluster code — <code>us-west-000</code>, <code>us-west-001</code>
+            B2 cluster code - <code>us-west-000</code>, <code>us-west-001</code>
             , <code>us-west-002</code>, <code>us-east-004</code>,{" "}
             <code>us-east-005</code>, <code>eu-central-003</code>, etc. Drives
             the endpoint host (<code>{`s3.<region>.backblazeb2.com`}</code>) and
             doubles as the SigV4 region. Each bucket lives in exactly one
-            cluster — pick the wrong one and B2 responds with a <code>301</code>{" "}
+            cluster - pick the wrong one and B2 responds with a <code>301</code>{" "}
             redirect. No env-var fallback.
           </p>
         </PropAccordionItem>
@@ -55,7 +55,7 @@ export const BackblazeB2 = () => (
           value="accessKeyId"
         >
           <p>
-            Static credentials — B2 application key ID and key. Falls back to{" "}
+            Static credentials - B2 application key ID and key. Falls back to{" "}
             <code>B2_APPLICATION_KEY_ID</code> and{" "}
             <code>B2_APPLICATION_KEY</code>; required if those env vars aren't
             set.
@@ -75,7 +75,7 @@ export const BackblazeB2 = () => (
         >
           <p>
             Use path-style addressing (<code>/&lt;bucket&gt;/&lt;key&gt;</code>)
-            rather than virtual-hosted style. Defaults to <code>false</code> —
+            rather than virtual-hosted style. Defaults to <code>false</code> -
             virtual-hosted is canonical for B2.
           </p>
         </PropAccordionItem>

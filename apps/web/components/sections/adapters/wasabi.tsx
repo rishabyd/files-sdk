@@ -22,7 +22,7 @@ export const Wasabi = () => (
     </Heading>
     <p>
       Wasabi Hot Cloud Storage via its S3-compatible API. A thin wrapper around
-      the S3 adapter — endpoint derived from the region code (
+      the S3 adapter - endpoint derived from the region code (
       <code>us-east-1</code>, <code>eu-central-1</code>,{" "}
       <code>ap-northeast-1</code>, …), virtual-hosted-style addressing, errors
       relabelled. Region names mirror AWS but the endpoints are Wasabi's own.
@@ -41,7 +41,7 @@ export const Wasabi = () => (
         </PropAccordionItem>
         <PropAccordionItem name="region" status="required" value="region">
           <p>
-            Wasabi storage region — <code>us-east-1</code>,{" "}
+            Wasabi storage region - <code>us-east-1</code>,{" "}
             <code>us-east-2</code>, <code>us-central-1</code>,{" "}
             <code>us-west-1</code>, <code>ca-central-1</code>,{" "}
             <code>eu-central-1</code>, <code>eu-central-2</code>,{" "}
@@ -77,7 +77,7 @@ export const Wasabi = () => (
         >
           <p>
             Use path-style addressing (<code>/&lt;bucket&gt;/&lt;key&gt;</code>)
-            rather than virtual-hosted style. Defaults to <code>false</code> —
+            rather than virtual-hosted style. Defaults to <code>false</code> -
             virtual-hosted is canonical for Wasabi.
           </p>
         </PropAccordionItem>

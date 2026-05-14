@@ -22,7 +22,7 @@ export const Hetzner = () => (
     </Heading>
     <p>
       Hetzner Object Storage via its S3-compatible API. A thin wrapper around
-      the S3 adapter — endpoint derived from the location code (
+      the S3 adapter - endpoint derived from the location code (
       <code>fsn1</code>, <code>nbg1</code>, <code>hel1</code>),
       virtual-hosted-style addressing, errors relabelled. Auto-loads from{" "}
       <code>HCLOUD_ACCESS_KEY_ID</code> and{" "}
@@ -40,7 +40,7 @@ export const Hetzner = () => (
         </PropAccordionItem>
         <PropAccordionItem name="region" status="required" value="region">
           <p>
-            Hetzner location code — <code>fsn1</code> (Falkenstein),{" "}
+            Hetzner location code - <code>fsn1</code> (Falkenstein),{" "}
             <code>nbg1</code> (Nuremberg), or <code>hel1</code> (Helsinki).
             Drives the endpoint host (
             <code>{`<region>.your-objectstorage.com`}</code>) and doubles as the
@@ -72,7 +72,7 @@ export const Hetzner = () => (
         >
           <p>
             Use path-style addressing (<code>/&lt;bucket&gt;/&lt;key&gt;</code>)
-            rather than virtual-hosted style. Defaults to <code>false</code> —
+            rather than virtual-hosted style. Defaults to <code>false</code> -
             virtual-hosted is canonical for Hetzner.
           </p>
         </PropAccordionItem>

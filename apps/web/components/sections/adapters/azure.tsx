@@ -77,13 +77,13 @@ export const Azure = () => (
             <code>AZURE_STORAGE_ACCOUNT_KEY</code> then{" "}
             <code>AZURE_STORAGE_KEY</code>. Required if you want{" "}
             <code>url()</code> or <code>signedUploadUrl()</code> to mint new SAS
-            tokens — without it those methods throw.
+            tokens - without it those methods throw.
           </p>
         </PropAccordionItem>
         <PropAccordionItem name="sasToken" status="optional" value="sasToken">
           <p>
             Pre-issued SAS token, with or without the leading <code>?</code>.
-            Without an account key the signing methods throw —
+            Without an account key the signing methods throw -
             reads/writes/listing still work as long as the SAS grants those
             permissions.
           </p>
@@ -118,13 +118,13 @@ export const Azure = () => (
         Limitations
       </Heading>
       <p>
-        <code>signedUploadUrl()</code> issues PUT-only — Azure SAS has no
+        <code>signedUploadUrl()</code> issues PUT-only - Azure SAS has no
         POST-policy equivalent. <code>maxSize</code> throws because Azure can't
         enforce upload caps at the URL level; enforce them at your application
         gateway. <code>copy()</code> uses <code>syncCopyFromURL</code>, which
         caps at 256 MB source size; larger blobs need{" "}
         <code>beginCopyFromURL</code> via <code>adapter.raw</code>.{" "}
-        <code>@azure/identity</code> / Managed Identity is not supported in v1 —
+        <code>@azure/identity</code> / Managed Identity is not supported in v1 -
         drop down to <code>adapter.raw</code> or wait for a future{" "}
         <code>client</code> option.
       </p>

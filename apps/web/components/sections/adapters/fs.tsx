@@ -8,7 +8,7 @@ import { fs } from "files-sdk/fs";
 
 // Writes objects under \`./.uploads\` with a sidecar \`.meta.json\`
 // per file for Content-Type, ETag, and user metadata. Designed for
-// dev and CI — same Adapter contract as the cloud adapters, so swap
+// dev and CI - same Adapter contract as the cloud adapters, so swap
 // it in via env without changing call sites.
 const files = new Files({
   adapter: fs({
@@ -25,7 +25,7 @@ export const Fs = () => (
       Filesystem
     </Heading>
     <p>
-      Local filesystem. The dev/test adapter — point it at a directory and it
+      Local filesystem. The dev/test adapter - point it at a directory and it
       implements the same <code>Adapter</code> contract as the cloud adapters
       using <code>node:fs/promises</code>. Each upload writes the body and a
       sidecar <code>.meta.json</code> file alongside it (Content-Type, ETag,
@@ -41,7 +41,7 @@ export const Fs = () => (
         <PropAccordionItem name="root" status="required" value="root">
           <p>
             Directory the adapter manages. Absolute or relative; created on
-            first upload. All operations are scoped to this directory — keys
+            first upload. All operations are scoped to this directory - keys
             that resolve outside it (e.g. <code>../etc/passwd</code>) throw{" "}
             <code>Provider</code>.
           </p>
@@ -54,11 +54,11 @@ export const Fs = () => (
           <p>
             Origin used to build URLs from <code>url()</code>. When set,{" "}
             <code>url(key)</code> returns{" "}
-            <code>{`\`\${urlBaseUrl}/\${key}\``}</code> — useful when a dev
+            <code>{`\`\${urlBaseUrl}/\${key}\``}</code> - useful when a dev
             server (Next.js <code>/public</code> mount,{" "}
             <code>serve-static</code>, etc.) is exposing the same{" "}
             <code>root</code>. When unset, <code>url()</code> returns a{" "}
-            <code>file://</code> URL — fine for CLIs/tests, not browsers.
+            <code>file://</code> URL - fine for CLIs/tests, not browsers.
           </p>
         </PropAccordionItem>
         <PropAccordionItem
@@ -92,12 +92,12 @@ export const Fs = () => (
         Limitations
       </Heading>
       <p>
-        <code>signedUploadUrl()</code> throws without <code>urlBaseUrl</code>—
+        <code>signedUploadUrl()</code> throws without <code>urlBaseUrl</code>-
         there's no upload server to sign against. <code>url()</code> throws on{" "}
         <code>responseContentDisposition</code> without <code>urlBaseUrl</code>:{" "}
         <code>file://</code> has no signature in which to bind the override.
         Files written by hand into <code>root</code> without a sidecar are still
-        readable — <code>contentType</code> falls back to{" "}
+        readable - <code>contentType</code> falls back to{" "}
         <code>application/octet-stream</code> and <code>etag</code> is absent.
       </p>
     </div>

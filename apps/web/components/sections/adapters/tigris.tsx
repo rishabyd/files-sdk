@@ -23,7 +23,7 @@ export const Tigris = () => (
     </Heading>
     <p>
       Tigris globally-distributed object storage via its S3-compatible API. A
-      thin wrapper around the S3 adapter — fixed global endpoint, region
+      thin wrapper around the S3 adapter - fixed global endpoint, region
       defaults to <code>"auto"</code> for signing, virtual-hosted-style
       addressing, errors relabelled. Auto-loads from{" "}
       <code>TIGRIS_ACCESS_KEY_ID</code> and{" "}
@@ -53,14 +53,14 @@ export const Tigris = () => (
         <PropAccordionItem name="endpoint" status="optional" value="endpoint">
           <p>
             Tigris endpoint. Defaults to{" "}
-            <code>https://fly.storage.tigris.dev</code> — Tigris serves a single
+            <code>https://fly.storage.tigris.dev</code> - Tigris serves a single
             global endpoint and routes to the nearest region automatically.
             Override for pinned-region testing or a private deployment.
           </p>
         </PropAccordionItem>
         <PropAccordionItem name="region" status="optional" value="region">
           <p>
-            SigV4 region used for signing. Defaults to <code>"auto"</code> —
+            SigV4 region used for signing. Defaults to <code>"auto"</code> -
             Tigris doesn't use the SigV4 region for routing, but the signature
             requires <em>some</em> value. Leave the default unless you have a
             reason to change it.
@@ -73,7 +73,7 @@ export const Tigris = () => (
         >
           <p>
             Use path-style addressing (<code>/&lt;bucket&gt;/&lt;key&gt;</code>)
-            rather than virtual-hosted style. Defaults to <code>false</code> —
+            rather than virtual-hosted style. Defaults to <code>false</code> -
             virtual-hosted is canonical for Tigris.
           </p>
         </PropAccordionItem>

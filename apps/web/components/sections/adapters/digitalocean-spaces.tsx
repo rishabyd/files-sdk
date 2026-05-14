@@ -22,7 +22,7 @@ export const DigitalOceanSpaces = () => (
     </Heading>
     <p>
       DigitalOcean Spaces via the S3-compatible API. A thin wrapper around the
-      S3 adapter — endpoint derived from the region you pass, errors relabelled,
+      S3 adapter - endpoint derived from the region you pass, errors relabelled,
       virtual-hosted addressing left as the default. Auto-loads from{" "}
       <code>DO_SPACES_KEY</code> and <code>DO_SPACES_SECRET</code>.
     </p>
@@ -37,7 +37,7 @@ export const DigitalOceanSpaces = () => (
         </PropAccordionItem>
         <PropAccordionItem name="region" status="required" value="region">
           <p>
-            Spaces datacenter region — e.g. <code>nyc3</code>, <code>sfo3</code>
+            Spaces datacenter region - e.g. <code>nyc3</code>, <code>sfo3</code>
             , <code>ams3</code>, <code>fra1</code>, <code>sgp1</code>,{" "}
             <code>syd1</code>, <code>blr1</code>, <code>tor1</code>,{" "}
             <code>lon1</code>. Drives the endpoint host; there's no env-var
@@ -59,7 +59,7 @@ export const DigitalOceanSpaces = () => (
           <p>
             Override the Spaces endpoint. Defaults to{" "}
             <code>{`https://\${region}.digitaloceanspaces.com`}</code>. Spaces
-            routes by Host header — the SDK prepends the bucket subdomain for
+            routes by Host header - the SDK prepends the bucket subdomain for
             virtual-hosted style.
           </p>
         </PropAccordionItem>
@@ -70,7 +70,7 @@ export const DigitalOceanSpaces = () => (
         >
           <p>
             Use path-style addressing (<code>/&lt;bucket&gt;/&lt;key&gt;</code>)
-            rather than virtual-hosted style. Defaults to <code>false</code> —
+            rather than virtual-hosted style. Defaults to <code>false</code> -
             virtual-hosted (
             <code>{`<bucket>.<region>.digitaloceanspaces.com`}</code>) is the
             canonical Spaces routing.

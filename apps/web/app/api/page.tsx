@@ -14,7 +14,7 @@ const mobileSections = flattenSections(API_SECTIONS);
 export const metadata: Metadata = {
   alternates: { canonical: "/api" },
   description:
-    "The full Files SDK API — eight unified methods, the StoredFile type, normalized errors, and the escape hatch to the native client.",
+    "The full Files SDK API - eight unified methods, the StoredFile type, normalized errors, and the escape hatch to the native client.",
   openGraph: { url: "/api" },
   title: "API reference",
 };
@@ -23,7 +23,7 @@ const ApiPage = () => (
   <>
     <PageHero
       title="API reference"
-      description="Every method is available on the Files instance. The unified surface only covers what every adapter can do cleanly — anything provider-specific lives on files.raw."
+      description="Every method is available on the Files instance. The unified surface only covers what every adapter can do cleanly - anything provider-specific lives on files.raw."
     />
     <FadeIn className="lg:hidden">
       <MobileTableOfContents sections={mobileSections} />

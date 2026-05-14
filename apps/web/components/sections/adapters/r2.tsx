@@ -39,7 +39,7 @@ export const R2 = () => (
     </p>
     <CodeBlock code={R2_EXAMPLE} lang="ts" />
     <p>
-      <code>publicBaseUrl</code> — optional, an <code>r2.dev</code> subdomain or
+      <code>publicBaseUrl</code> - optional, an <code>r2.dev</code> subdomain or
       custom domain bound to the bucket. When set, <code>url()</code> returns{" "}
       <code>{`\`\${publicBaseUrl}/\${key}\``}</code> and skips signing.
     </p>
@@ -51,7 +51,7 @@ export const R2 = () => (
       credentials. Reads and writes go through the binding (no egress, no extra
       round trip); <code>url()</code> and <code>signedUploadUrl()</code> route
       through the HTTP signer because a Worker binding has no signing primitive.
-      The S3 client is lazy-loaded — bindings-only Workers don't pull{" "}
+      The S3 client is lazy-loaded - bindings-only Workers don't pull{" "}
       <code>@aws-sdk/client-s3</code> into their bundle.
     </p>
     <CodeBlock code={R2_HYBRID_EXAMPLE} lang="ts" />

@@ -22,7 +22,7 @@ export const Minio = () => (
     </Heading>
     <p>
       MinIO and other self-hosted S3-compatible servers. A thin wrapper around
-      the S3 adapter with MinIO-friendly defaults — path-style addressing on,
+      the S3 adapter with MinIO-friendly defaults - path-style addressing on,
       region defaulted, errors relabelled. Auto-loads from{" "}
       <code>MINIO_ACCESS_KEY_ID</code> and <code>MINIO_SECRET_ACCESS_KEY</code>.
     </p>
@@ -38,7 +38,7 @@ export const Minio = () => (
         <PropAccordionItem name="endpoint" status="required" value="endpoint">
           <p>
             MinIO server URL, e.g. <code>http://localhost:9000</code>. Include
-            the scheme — <code>http://</code> for local dev,{" "}
+            the scheme - <code>http://</code> for local dev,{" "}
             <code>https://</code> in production.
           </p>
         </PropAccordionItem>
@@ -57,7 +57,7 @@ export const Minio = () => (
           <p>
             SigV4 region used for signing. Defaults to <code>us-east-1</code>.
             SigV4 requires some region in the signature, but MinIO ignores it
-            for routing — leave the default unless you've configured per-region
+            for routing - leave the default unless you've configured per-region
             buckets.
           </p>
         </PropAccordionItem>
