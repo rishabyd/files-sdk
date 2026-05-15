@@ -5,6 +5,7 @@ export default defineConfig({
   dts: true,
   entry: [
     "src/index.ts",
+    "src/cli/index.ts",
     "src/s3/index.ts",
     "src/r2/index.ts",
     "src/vercel-blob/index.ts",

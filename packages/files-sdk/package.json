@@ -13,6 +13,9 @@
     "url": "git+https://github.com/haydenbleasel/files-sdk.git",
     "directory": "packages/files-sdk"
   },
+  "bin": {
+    "files": "./dist/cli/index.js"
+  },
   "files": [
     "dist"
   ],
@@ -184,11 +187,13 @@
     "@google-cloud/storage": "^7.19.0",
     "@googleapis/drive": "^14.0.0",
     "@microsoft/microsoft-graph-client": "^3.0.7",
+    "@modelcontextprotocol/sdk": "^1.0.0",
     "@netlify/blobs": "^10.7.4",
     "@supabase/storage-js": "^2.105.4",
     "@vercel/blob": "^2.3",
     "box-typescript-sdk-gen": "^1.19.1",
     "cloudinary": "^2.10.0",
+    "commander": "^12.1.0",
     "dropbox": "^10.34.0",
     "google-auth-library": "^9.15.1",
     "node-appwrite": "^24.1.0",

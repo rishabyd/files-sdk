@@ -13,6 +13,16 @@ export const AI_SECTIONS: TocSection[] = [
   { id: "claude-tools", label: "Claude Agent SDK" },
 ];
 
+export const CLI_SECTIONS: TocSection[] = [
+  { id: "cli-install", label: "Install" },
+  { id: "cli-providers", label: "Pick a provider" },
+  { id: "cli-commands", label: "Commands" },
+  { id: "cli-output", label: "JSON output & exit codes" },
+  { id: "cli-streaming", label: "Streaming & dry-run" },
+  { id: "cli-mcp", label: "MCP server" },
+  { id: "cli-agents", label: "Wiring agents" },
+];
+
 export const API_SECTIONS: TocSection[] = [
   {
     children: [
