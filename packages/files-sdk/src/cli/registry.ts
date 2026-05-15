@@ -12,6 +12,13 @@ import type { Adapter } from "../index.js";
 export interface ProviderRegistration {
   /** Human-readable list of required flags or env vars, for `--help` and errors. */
   required: readonly string[];
+  /**
+   * Optional one-line note surfaced in errors and `--help`. Use this for
+   * providers whose configuration doesn't fit the typed flag set — most
+   * commonly the OAuth-token providers, where the only path is
+   * `--config-json` (or the adapter's own env vars).
+   */
+  notes?: string;
   /** Construct the adapter from a flat opts object. */
   load: (opts: ProviderOpts) => Promise<Adapter>;
 }
@@ -133,6 +140,8 @@ export const PROVIDERS: Record<string, ProviderRegistration> = {
       const { appwrite } = await import("../appwrite/index.js");
       return cast(appwrite, merge({}, opts.extra));
     },
+    notes:
+      "configure via --config-json (endpoint, projectId, apiKey, bucketId) or APPWRITE_* env vars",
     required: [],
   },
   azure: {
@@ -167,6 +176,8 @@ export const PROVIDERS: Record<string, ProviderRegistration> = {
       const { box } = await import("../box/index.js");
       return cast(box, merge({}, opts.extra));
     },
+    notes:
+      "OAuth-based — configure via --config-json (clientId, clientSecret, refreshToken, etc.) or BOX_* env vars",
     required: [],
   },
   cloudinary: {
@@ -174,6 +185,8 @@ export const PROVIDERS: Record<string, ProviderRegistration> = {
       const { cloudinaryAdapter } = await import("../cloudinary/index.js");
       return cast(cloudinaryAdapter, merge({}, opts.extra));
     },
+    notes:
+      "configure via --config-json (cloudName, apiKey, apiSecret) or CLOUDINARY_URL env var",
     required: [],
   },
   "digitalocean-spaces": {
@@ -192,6 +205,8 @@ export const PROVIDERS: Record<string, ProviderRegistration> = {
         merge(stripUndefined({ accessToken: opts.token }), opts.extra)
       );
     },
+    notes:
+      "OAuth-based — pass --token <accessToken>, or use --config-json for refresh-token flows / DROPBOX_ACCESS_TOKEN env var",
     required: [],
   },
   exoscale: {
@@ -249,6 +264,8 @@ export const PROVIDERS: Record<string, ProviderRegistration> = {
       const { googleDrive } = await import("../google-drive/index.js");
       return cast(googleDrive, merge({}, opts.extra));
     },
+    notes:
+      "OAuth-based — configure via --config-json (clientId, clientSecret, refreshToken, folderId) or GOOGLE_* env vars",
     required: [],
   },
   hetzner: {
@@ -301,6 +318,8 @@ export const PROVIDERS: Record<string, ProviderRegistration> = {
       const { onedrive } = await import("../onedrive/index.js");
       return cast(onedrive, merge({}, opts.extra));
     },
+    notes:
+      "OAuth-based — configure via --config-json (Microsoft Graph clientId, clientSecret, tenantId, etc.)",
     required: [],
   },
   "oracle-cloud": {
@@ -356,6 +375,8 @@ export const PROVIDERS: Record<string, ProviderRegistration> = {
       const { sharepoint } = await import("../sharepoint/index.js");
       return cast(sharepoint, merge({}, opts.extra));
     },
+    notes:
+      "OAuth-based — configure via --config-json (Microsoft Graph clientId, clientSecret, tenantId, siteId, driveId)",
     required: [],
   },
   storj: {
@@ -398,6 +419,7 @@ export const PROVIDERS: Record<string, ProviderRegistration> = {
         merge(stripUndefined({ token: opts.token }), opts.extra)
       );
     },
+    notes: "pass --token <uploadthingToken> or set UPLOADTHING_TOKEN",
     required: [],
   },
   "vercel-blob": {

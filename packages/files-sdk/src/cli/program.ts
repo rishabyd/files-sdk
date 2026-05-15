@@ -17,6 +17,9 @@ import type { CommonRunOpts } from "./commands.js";
 import { fail, parseJson } from "./io.js";
 import type { OutputOpts } from "./io.js";
 import type { GlobalCliOptions } from "./loader.js";
+// Type-only — runtime load is the dynamic `import("./mcp.js")` below so the
+// optional `@modelcontextprotocol/sdk` dep stays lazy.
+import type * as McpModule from "./mcp.js";
 import { PROVIDER_NAMES } from "./registry.js";
 
 const pkg = createRequire(import.meta.url)("../../package.json") as {
@@ -413,8 +416,24 @@ export const buildProgram = (): Command => {
     .action(async (_opts, cmd) => {
       const { global, out } = resolveOpts(cmd as Command);
       try {
-        const { startMcpServer } = await import("./mcp.js");
-        await startMcpServer({ global });
+        // `@modelcontextprotocol/sdk` is an optional dependency — pulling
+        // it in lazily means library-only consumers don't pay the install
+        // cost. If it's missing, give a clearer hint than the raw
+        // ERR_MODULE_NOT_FOUND.
+        let mcp: typeof McpModule;
+        try {
+          mcp = await import("./mcp.js");
+        } catch (loadError) {
+          const { code } = loadError as NodeJS.ErrnoException;
+          if (code === "ERR_MODULE_NOT_FOUND" || code === "MODULE_NOT_FOUND") {
+            throw new Error(
+              "the `mcp` subcommand requires `@modelcontextprotocol/sdk` — install it with `npm install @modelcontextprotocol/sdk`",
+              { cause: loadError }
+            );
+          }
+          throw loadError;
+        }
+        await mcp.startMcpServer({ global });
       } catch (error) {
         fail(error, out);
       }

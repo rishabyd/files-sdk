@@ -13,6 +13,21 @@ const pkg = createRequire(import.meta.url)("../../package.json") as {
   version: string;
 };
 
+// Default cap for MCP `download` — base64-encoded bodies must fit in a
+// single tool response, so refuse anything that would obviously OOM the
+// agent process. Override with the `maxBytes` argument per call.
+const DEFAULT_MCP_DOWNLOAD_MAX_BYTES = 10 * 1024 * 1024;
+
+const encodeUploadBody = (text?: string, base64?: string): Uint8Array => {
+  if (text !== undefined) {
+    return new TextEncoder().encode(text);
+  }
+  if (base64 !== undefined) {
+    return new Uint8Array(Buffer.from(base64, "base64"));
+  }
+  throw new FilesError("Provider", "expected either `text` or `base64` body");
+};
+
 export interface McpServerOpts {
   global: GlobalCliOptions;
 }
@@ -40,6 +55,11 @@ const errorPayload = (err: unknown) => {
  * tool. Provider + credentials are bound at server startup (from the
  * global flags / env), so each tool call only needs operation arguments —
  * the agent doesn't have to thread credentials through every request.
+ *
+ * The `Files` instance is constructed once at startup and reused across
+ * every tool call. This keeps the underlying SDK client (S3 client,
+ * GCS client, etc.) warm and surfaces credential failures immediately
+ * rather than on the first tool call.
  */
 export const startMcpServer = async (opts: McpServerOpts): Promise<void> => {
   const server = new McpServer({
@@ -47,18 +67,13 @@ export const startMcpServer = async (opts: McpServerOpts): Promise<void> => {
     version: pkg.version,
   });
 
-  const withFiles = async <T>(
-    fn: (files: Awaited<ReturnType<typeof loadFiles>>["files"]) => Promise<T>
-  ) => {
-    const { files } = await loadFiles(opts.global);
-    return fn(files);
-  };
+  const { files } = await loadFiles(opts.global);
 
   server.registerTool(
     "upload",
     {
       description:
-        "Upload bytes to the configured provider at the given key. Body may be inline UTF-8 text or base64-encoded binary.",
+        "Upload bytes to the configured provider at the given key. Body may be inline UTF-8 text or base64-encoded binary — exactly one of `text` or `base64` is required.",
       inputSchema: {
         base64: z
           .string()
@@ -80,28 +95,19 @@ export const startMcpServer = async (opts: McpServerOpts): Promise<void> => {
     },
     async ({ key, text, base64, contentType, cacheControl, metadata }) => {
       try {
-        let body: Uint8Array | undefined;
-        if (text === undefined) {
-          if (base64 !== undefined) {
-            body = new Uint8Array(Buffer.from(base64, "base64"));
-          }
-        } else {
-          body = new TextEncoder().encode(text);
-        }
-        if (!body) {
+        if (text !== undefined && base64 !== undefined) {
           throw new FilesError(
             "Provider",
-            "expected either `text` or `base64` body"
+            "`text` and `base64` are mutually exclusive — pass exactly one"
           );
         }
-        return await withFiles(async (files) => {
-          const result = await files.upload(key, body, {
-            cacheControl,
-            contentType,
-            metadata,
-          });
-          return ok(result);
+        const body = encodeUploadBody(text, base64);
+        const result = await files.upload(key, body, {
+          cacheControl,
+          contentType,
+          metadata,
         });
+        return ok(result);
       } catch (error) {
         return errorPayload(error);
       }
@@ -112,21 +118,41 @@ export const startMcpServer = async (opts: McpServerOpts): Promise<void> => {
     "download",
     {
       description:
-        "Download bytes for the given key. Returns metadata + base64 body so binary roundtrips safely through MCP.",
+        "Download bytes for the given key. Returns metadata + base64 body so binary roundtrips safely through MCP. Bodies larger than `maxBytes` (default 10 MiB) are refused — use the CLI for larger files.",
       inputSchema: {
         key: z.string(),
+        maxBytes: z
+          .number()
+          .int()
+          .positive()
+          .optional()
+          .describe(
+            `Refuse the download if the body exceeds this many bytes (default ${DEFAULT_MCP_DOWNLOAD_MAX_BYTES})`
+          ),
       },
       title: "Download a file",
     },
-    async ({ key }) => {
+    async ({ key, maxBytes }) => {
       try {
-        return await withFiles(async (files) => {
-          const file = await files.download(key);
-          const buf = Buffer.from(await file.arrayBuffer());
-          return ok({
-            ...storedFileToJson(file),
-            base64: buf.toString("base64"),
-          });
+        const cap = maxBytes ?? DEFAULT_MCP_DOWNLOAD_MAX_BYTES;
+        const meta = await files.head(key);
+        if (typeof meta.size === "number" && meta.size > cap) {
+          throw new FilesError(
+            "Provider",
+            `object is ${meta.size} bytes, exceeds maxBytes=${cap} — use the CLI to stream large bodies`
+          );
+        }
+        const file = await files.download(key);
+        const buf = Buffer.from(await file.arrayBuffer());
+        if (buf.byteLength > cap) {
+          throw new FilesError(
+            "Provider",
+            `object is ${buf.byteLength} bytes, exceeds maxBytes=${cap} — use the CLI to stream large bodies`
+          );
+        }
+        return ok({
+          ...storedFileToJson(file),
+          base64: buf.toString("base64"),
         });
       } catch (error) {
         return errorPayload(error);
@@ -143,10 +169,8 @@ export const startMcpServer = async (opts: McpServerOpts): Promise<void> => {
     },
     async ({ key }) => {
       try {
-        return await withFiles(async (files) => {
-          const file = await files.head(key);
-          return ok(storedFileToJson(file));
-        });
+        const file = await files.head(key);
+        return ok(storedFileToJson(file));
       } catch (error) {
         return errorPayload(error);
       }
@@ -162,10 +186,8 @@ export const startMcpServer = async (opts: McpServerOpts): Promise<void> => {
     },
     async ({ key }) => {
       try {
-        return await withFiles(async (files) => {
-          const exists = await files.exists(key);
-          return ok({ exists, key });
-        });
+        const exists = await files.exists(key);
+        return ok({ exists, key });
       } catch (error) {
         return errorPayload(error);
       }
@@ -181,10 +203,8 @@ export const startMcpServer = async (opts: McpServerOpts): Promise<void> => {
     },
     async ({ key }) => {
       try {
-        return await withFiles(async (files) => {
-          await files.delete(key);
-          return ok({ deleted: true, key });
-        });
+        await files.delete(key);
+        return ok({ deleted: true, key });
       } catch (error) {
         return errorPayload(error);
       }
@@ -200,10 +220,8 @@ export const startMcpServer = async (opts: McpServerOpts): Promise<void> => {
     },
     async ({ from, to }) => {
       try {
-        return await withFiles(async (files) => {
-          await files.copy(from, to);
-          return ok({ copied: true, from, to });
-        });
+        await files.copy(from, to);
+        return ok({ copied: true, from, to });
       } catch (error) {
         return errorPayload(error);
       }
@@ -224,12 +242,10 @@ export const startMcpServer = async (opts: McpServerOpts): Promise<void> => {
     },
     async ({ prefix, cursor, limit }) => {
       try {
-        return await withFiles(async (files) => {
-          const result = await files.list({ cursor, limit, prefix });
-          return ok({
-            cursor: result.cursor,
-            items: result.items.map(storedFileToJson),
-          });
+        const result = await files.list({ cursor, limit, prefix });
+        return ok({
+          cursor: result.cursor,
+          items: result.items.map(storedFileToJson),
         });
       } catch (error) {
         return errorPayload(error);
@@ -251,13 +267,11 @@ export const startMcpServer = async (opts: McpServerOpts): Promise<void> => {
     },
     async ({ key, expiresIn, responseContentDisposition }) => {
       try {
-        return await withFiles(async (files) => {
-          const url = await files.url(key, {
-            expiresIn,
-            responseContentDisposition,
-          });
-          return ok({ key, url });
+        const url = await files.url(key, {
+          expiresIn,
+          responseContentDisposition,
         });
+        return ok({ key, url });
       } catch (error) {
         return errorPayload(error);
       }
@@ -280,15 +294,13 @@ export const startMcpServer = async (opts: McpServerOpts): Promise<void> => {
     },
     async ({ key, expiresIn, contentType, maxSize, minSize }) => {
       try {
-        return await withFiles(async (files) => {
-          const signed = await files.signedUploadUrl(key, {
-            contentType,
-            expiresIn,
-            maxSize,
-            minSize,
-          });
-          return ok({ key, ...signed });
+        const signed = await files.signedUploadUrl(key, {
+          contentType,
+          expiresIn,
+          maxSize,
+          minSize,
         });
+        return ok({ key, ...signed });
       } catch (error) {
         return errorPayload(error);
       }

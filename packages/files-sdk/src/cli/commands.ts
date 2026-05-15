@@ -78,11 +78,21 @@ export const runDownload = async (opts: DownloadCmdOpts): Promise<void> => {
   const file = await files.download(opts.key, { as: "stream" });
   await writeBody(file, { out: opts.out, stdout: opts.stdout });
   if (!opts.stdout) {
-    // body went to a file; emit JSON status to stdout
+    // body went to a file; emit status to stdout in the user's chosen format
     emit(storedFileToJson(file), opts);
   } else if (opts.verbose) {
-    // body went to stdout; metadata to stderr (don't pollute the stream)
-    process.stderr.write(`${JSON.stringify(storedFileToJson(file))}\n`);
+    // body went to stdout; metadata goes to stderr so it doesn't pollute
+    // the byte stream. Honor --no-json: humans get key=value lines, JSON
+    // mode gets the same envelope it would on stdout.
+    const meta = storedFileToJson(file);
+    if (opts.json) {
+      const text = opts.pretty
+        ? JSON.stringify(meta, null, 2)
+        : JSON.stringify(meta);
+      process.stderr.write(`${text}\n`);
+    } else {
+      process.stderr.write(`${JSON.stringify(meta, null, 2)}\n`);
+    }
   }
 };
 

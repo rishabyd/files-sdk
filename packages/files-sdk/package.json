@@ -187,7 +187,6 @@
     "@google-cloud/storage": "^7.19.0",
     "@googleapis/drive": "^14.0.0",
     "@microsoft/microsoft-graph-client": "^3.0.7",
-    "@modelcontextprotocol/sdk": "^1.0.0",
     "@netlify/blobs": "^10.7.4",
     "@supabase/storage-js": "^2.105.4",
     "@vercel/blob": "^2.3",
@@ -237,5 +236,8 @@
     "zod": {
       "optional": true
     }
+  },
+  "optionalDependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
   }
 }

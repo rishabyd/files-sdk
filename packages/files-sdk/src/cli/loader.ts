@@ -94,8 +94,21 @@ export const loadFiles = async (
   if (!entry) {
     throw new FilesError("Provider", `unknown provider "${provider}"`);
   }
-  const adapter = await entry.load(toProviderOpts(opts));
-  return { files: new Files({ adapter }), provider };
+  try {
+    const adapter = await entry.load(toProviderOpts(opts));
+    return { files: new Files({ adapter }), provider };
+  } catch (error) {
+    // The adapter's own missing-required-field error is the most accurate
+    // message — wrap it with the provider's `notes` hint so OAuth-only
+    // providers don't leave the user guessing where to plug credentials in.
+    if (entry.notes && error instanceof Error) {
+      throw new FilesError(
+        error instanceof FilesError ? error.code : "Provider",
+        `${error.message}\n  hint: ${entry.notes}`
+      );
+    }
+    throw error;
+  }
 };
 
 export const describeProvider = (opts: GlobalCliOptions): string =>
