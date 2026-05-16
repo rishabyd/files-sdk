@@ -361,4 +361,44 @@ describe("cli/commands real (fs adapter)", () => {
     expect(out.key).toBe("d.txt");
     expect(out.size).toBe("downloaded".length);
   });
+
+  test("download with --stdout --verbose emits body to stdout and JSON metadata to stderr", async () => {
+    const local = path.join(root, "in.txt");
+    await uploadFile("v.txt", "verbose-body", local);
+    cap.stdout.length = 0;
+    cap.stderr.length = 0;
+    await runDownload({
+      ...baseOpts({ verbose: true }),
+      key: "v.txt",
+      stdout: true,
+    });
+    // Body should land on stdout untouched (raw stream, no JSON wrapper).
+    expect(cap.stdout.join("")).toContain("verbose-body");
+    // Metadata envelope should land on stderr so it doesn't pollute the byte
+    // stream — same JSON shape as the `--out` path emits to stdout.
+    const meta = JSON.parse(cap.stderr.join("").trim()) as {
+      key: string;
+      size: number;
+    };
+    expect(meta.key).toBe("v.txt");
+    expect(meta.size).toBe("verbose-body".length);
+  });
+
+  test("download with --stdout --verbose --no-json writes pretty metadata to stderr", async () => {
+    // --no-json (`json: false`) flips the stderr formatter from compact JSON
+    // to a two-space pretty-printed envelope — humans get readable output,
+    // machines opt in via --json (the default).
+    const local = path.join(root, "in.txt");
+    await uploadFile("v2.txt", "x", local);
+    cap.stdout.length = 0;
+    cap.stderr.length = 0;
+    await runDownload({
+      ...baseOpts({ json: false, verbose: true }),
+      key: "v2.txt",
+      stdout: true,
+    });
+    expect(cap.stdout.join("")).toContain("x");
+    // Pretty JSON has indented "key":  prefixed with two spaces.
+    expect(cap.stderr.join("")).toContain('  "key": "v2.txt"');
+  });
 });

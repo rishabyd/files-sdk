@@ -118,6 +118,11 @@ const s3Credentials = (opts: ProviderOpts) =>
 
 const s3LikeOpts = (opts: ProviderOpts): AnyOpts =>
   stripUndefined({
+    // The s3() adapter reads credentials as a nested object; every other
+    // S3-compatible wrapper (akamai, vultr, wasabi, …) reads flat
+    // accessKeyId/secretAccessKey and rewraps them internally. Thread both
+    // forms so the CLI's --access-key-id flag works against any wrapper.
+    accessKeyId: opts.accessKeyId,
     bucket: opts.bucket,
     credentials: s3Credentials(opts),
     defaultUrlExpiresIn: opts.defaultUrlExpiresIn,
@@ -125,6 +130,8 @@ const s3LikeOpts = (opts: ProviderOpts): AnyOpts =>
     forcePathStyle: opts.forcePathStyle,
     publicBaseUrl: opts.publicBaseUrl,
     region: opts.region,
+    secretAccessKey: opts.secretAccessKey,
+    sessionToken: opts.sessionToken,
   });
 
 export const PROVIDERS: Record<string, ProviderRegistration> = {
