@@ -7,6 +7,7 @@ import { Azure } from "@/components/sections/adapters/azure";
 import { BackblazeB2 } from "@/components/sections/adapters/backblaze-b2";
 import { Box } from "@/components/sections/adapters/box";
 import { BunS3 } from "@/components/sections/adapters/bun-s3";
+import { BunnyStorage } from "@/components/sections/adapters/bunny-storage";
 import { Cloudinary } from "@/components/sections/adapters/cloudinary";
 import { DigitalOceanSpaces } from "@/components/sections/adapters/digitalocean-spaces";
 import { Dropbox } from "@/components/sections/adapters/dropbox";
@@ -129,6 +130,14 @@ export const ADAPTERS: Adapter[] = [
     name: "Akamai Cloud Object Storage",
     sections: [OPTIONS],
     slug: "akamai",
+  },
+  {
+    Component: BunnyStorage,
+    description:
+      "Bunny Storage via @bunny.net/storage-sdk. Connects to a Storage Zone with its zone password / access key; auto-loads BUNNY_STORAGE_* env vars (STORAGE_* as aliases).",
+    name: "Bunny Storage",
+    sections: [OPTIONS, LIMITATIONS],
+    slug: "bunny-storage",
   },
   {
     Component: BackblazeB2,

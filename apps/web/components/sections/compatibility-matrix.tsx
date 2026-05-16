@@ -37,6 +37,7 @@ const ADAPTERS = [
   { key: "storj", label: "Storj", parent: "Storj" },
   { key: "hetzner", label: "Hetzner", parent: "Hetzner" },
   { key: "akamai", label: "Akamai", parent: "Akamai" },
+  { key: "bunny", label: "Bunny", parent: "Bunny Storage" },
   { key: "b2", label: "Backblaze B2", parent: "Backblaze B2" },
   { key: "wasabi", label: "Wasabi", parent: "Wasabi" },
   { key: "scaleway", label: "Scaleway", parent: "Scaleway" },
@@ -83,6 +84,9 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       ),
       "bun-s3": warn(
         "User `metadata` and `cacheControl` throw - `Bun.S3Client.write()` exposes neither field. Reach for `s3()` on the same bucket if you need them. Stream bodies are wrapped in a `Response` and handed to Bun's writer."
+      ),
+      bunny: warn(
+        "Custom `metadata` and `cacheControl` throw — the Bunny Storage TypeScript SDK exposes content-type/checksum but no arbitrary object metadata or per-object cache-control field. Configure cache behavior on the Pull Zone/CDN."
       ),
       cloudinary: warn(
         "Bodies are buffered into memory and handed to `upload_stream` - Cloudinary's SDK has no streaming form. User `metadata` and `cacheControl` throw - Cloudinary has no per-asset HTTP cache header and no arbitrary-metadata field on upload; drop to `raw` for `context`. Uploads are scoped to the adapter's `resourceType`/`type` and overwrite (`invalidate: true`)."
@@ -141,6 +145,7 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
         "Resolves the file ID, then fetches `getDownloadFileUrl` for both buffered and streaming reads - the SDK's native `downloadFile` returns a Node `Readable` that's awkward to expose isomorphically, so the adapter routes through standard HTTP, which gives a `ReadableStream` body."
       ),
       "bun-s3": ok,
+      bunny: ok,
       cloudinary: warn(
         "No streaming primitive - the adapter fetches the delivery URL with `fetch()` to read bytes, so streamed downloads still buffer the body in memory. Metadata comes from a parallel `api.resource` call."
       ),
@@ -190,6 +195,7 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       b2: ok,
       box: ok,
       "bun-s3": ok,
+      bunny: ok,
       cloudinary: ok,
       dropbox: ok,
       exoscale: ok,
@@ -237,6 +243,9 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
         "Returns immediate-children files only at `rootFolderId` - no recursion, and subfolders are filtered out. `prefix` is filename-prefix only (matched client-side within the page). Pagination uses Box's offset, encoded as a numeric cursor string."
       ),
       "bun-s3": ok,
+      bunny: warn(
+        "Bunny lists a directory, not a recursive object-prefix scan. The adapter chooses the nearest directory for `prefix`, filters that page client-side, and encodes numeric offsets as cursors after fetching the directory listing."
+      ),
       cloudinary: warn(
         "Page size clamped to 500 (Cloudinary Admin API ceiling). Resources are scoped by `resource_type` and `type` at adapter construction, so mixed-type buckets need separate adapters. Pagination uses Cloudinary's opaque `next_cursor`."
       ),
@@ -302,6 +311,7 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
         "Box doesn't store user-supplied content types on file content - `head()` returns a type inferred from the filename extension (or `application/octet-stream` when unknown). `size`, `etag`, and `lastModified` come from `getFileById`."
       ),
       "bun-s3": ok,
+      bunny: ok,
       cloudinary: ok,
       dropbox: warn(
         "Dropbox doesn't store user-supplied content types - `filesUpload` accepts no Content-Type. `head()` returns a type inferred from the filename extension (or `application/octet-stream` when unknown). `etag` is Dropbox's `rev` field."
@@ -355,6 +365,7 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       b2: ok,
       box: ok,
       "bun-s3": ok,
+      bunny: ok,
       cloudinary: ok,
       dropbox: warn(
         "Resolves via `filesGetMetadata` and returns `false` for folder or deleted entries at the path - matches Dropbox's semantics where the same path can hold a folder or a tombstone. Only true file entries return `true`."
@@ -413,6 +424,9 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       box: ok,
       "bun-s3": warn(
         "Client-side stream copy - `Bun.S3Client` doesn't expose a server-side `CopyObject`, so the source is streamed through this process and re-uploaded. Doubled bandwidth, not atomic, and drops Content-Disposition/cache headers/user metadata/ACL (only Content-Type is preserved). Reach for `s3()` on the same bucket for server-side copy."
+      ),
+      bunny: warn(
+        "Read-then-write — Bunny Storage's TypeScript SDK has no server-side copy primitive, so the source is downloaded and re-uploaded. Not server-side atomic."
       ),
       cloudinary: warn(
         "Re-upload by URL - Cloudinary has no native copy and `rename` is move-only. The adapter fetches the source delivery URL and ingests it as a new asset under `to`. Produces a new `asset_id`/`etag`, not a byte-identical reference. Costs an egress + an ingest; not atomic."
@@ -481,6 +495,9 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
         "Default mints a signed download URL via `getDownloadFileUrl` - Box controls the TTL server-side, so `expiresIn` is accepted for API symmetry but is not honoured. With `publicByDefault: true`, `upload()` calls `addShareLinkToFile` (open access) and `url()` returns the link's `download_url`. With `publicBaseUrl`, returns `<publicBaseUrl>/<key>`. `responseContentDisposition` always throws - Box's URLs have no Content-Disposition override."
       ),
       "bun-s3": ok,
+      bunny: warn(
+        "Requires `publicBaseUrl` (for example a Bunny Pull Zone or custom CDN hostname) and returns `<publicBaseUrl>/<key>`. Without it, throws because the Storage API URL requires an `AccessKey` header. `expiresIn` is ignored and `responseContentDisposition` throws — Bunny Storage has no signed-read URL primitive."
+      ),
       cloudinary: warn(
         "Public delivery URLs by default (`type: 'upload'`). For `private`/`authenticated` types, mints a signed delivery URL via `private_download_url` (requires `apiSecret` and the asset's stored format - costs a HEAD round-trip per call). `responseContentDisposition` always throws - Cloudinary has no per-request Content-Disposition override (drop to `raw` for the `attachment` flag)."
       ),
@@ -559,6 +576,9 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       ),
       "bun-s3": warn(
         "PUT URL only - Bun exposes presigned URLs, not S3 POST policy fields, so `maxSize` throws (no `content-length-range` policy). Enforce upload caps at your application gateway instead."
+      ),
+      bunny: no(
+        "Throws — Bunny Storage has no presigned upload primitive. Writes go through the Storage API with an `AccessKey` header, so upload server-side via the SDK or proxy through your application."
       ),
       cloudinary: warn(
         "Form-POST shape with `fields` (`method: 'POST'`), not a single presigned PUT URL - signs Cloudinary's `api_sign_request` payload. Requires `apiSecret`. `maxSize` and `minSize` aren't enforced server-side - use an upload preset with `max_file_size` if you need a cap. `expiresIn` is informational - Cloudinary signatures are fixed at 1h."
