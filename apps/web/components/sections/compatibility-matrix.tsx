@@ -24,7 +24,8 @@ const warn = (note: string): Cell => ({ note, status: "warn" });
 const no = (note: string): Cell => ({ note, status: "no" });
 
 const ADAPTERS = [
-  { key: "s3", label: "S3", parent: "S3" },
+  { key: "s3", label: "AWS SDK", parent: "S3" },
+  { key: "bun-s3", label: "Bun", parent: "S3" },
   { key: "r2-http", label: "HTTP", parent: "Cloudflare R2" },
   { key: "r2-binding", label: "binding", parent: "Cloudflare R2" },
   { key: "r2-hybrid", label: "hybrid", parent: "Cloudflare R2" },
@@ -53,12 +54,14 @@ const ADAPTERS = [
   { key: "gcs", label: "GCS", parent: "GCS" },
   { key: "google-drive", label: "Google Drive", parent: "Google Drive" },
   { key: "onedrive", label: "OneDrive", parent: "OneDrive" },
+  { key: "sharepoint", label: "SharePoint", parent: "SharePoint" },
   { key: "dropbox", label: "Dropbox", parent: "Dropbox" },
   { key: "box", label: "Box", parent: "Box" },
   { key: "azure", label: "Azure", parent: "Azure" },
   { key: "supabase", label: "Supabase", parent: "Supabase" },
   { key: "ut-public", label: "public", parent: "UploadThing" },
   { key: "ut-private", label: "private", parent: "UploadThing" },
+  { key: "cloudinary", label: "Cloudinary", parent: "Cloudinary" },
   { key: "fs", label: "Filesystem", parent: "Filesystem" },
   { key: "appwrite", label: "Appwrite", parent: "Appwrite" },
 ] as const;
@@ -77,6 +80,12 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       b2: ok,
       box: warn(
         "Two-stage: walks/creates parent folders by ID under `rootFolderId`, then `uploads.uploadFile` (≤50 MB) or `chunkedUploads.uploadBigFile` (>50 MB). Re-uploads against existing leaf names route through `uploadFileVersion` (overwrite). Stream bodies are buffered up-front - Box's upload manager takes a Node `Readable`, not a Web stream. User `metadata` and `cacheControl` throw - Box exposes file metadata via classifications and metadata templates; drop to `raw.fileMetadata.*` if you need it."
+      ),
+      "bun-s3": warn(
+        "User `metadata` and `cacheControl` throw - `Bun.S3Client.write()` exposes neither field. Reach for `s3()` on the same bucket if you need them. Stream bodies are wrapped in a `Response` and handed to Bun's writer."
+      ),
+      cloudinary: warn(
+        "Bodies are buffered into memory and handed to `upload_stream` - Cloudinary's SDK has no streaming form. User `metadata` and `cacheControl` throw - Cloudinary has no per-asset HTTP cache header and no arbitrary-metadata field on upload; drop to `raw` for `context`. Uploads are scoped to the adapter's `resourceType`/`type` and overwrite (`invalidate: true`)."
       ),
       dropbox: warn(
         "Single-call `filesUpload` up to Dropbox's 150 MB limit; bodies above that automatically switch to `filesUploadSession*` (chunked, up to 350 GB) buffered into memory. Stream bodies are buffered up-front since the SDK has no streaming form. User `metadata` and `cacheControl` throw - Dropbox has no native arbitrary-metadata field; use `raw` with `property_groups` (registered template required) if you need it."
@@ -103,6 +112,9 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       "r2-hybrid": ok,
       s3: ok,
       scaleway: ok,
+      sharepoint: warn(
+        "Delegates to `onedrive` after site/library resolution: single-PUT simple upload capped at OneDrive's 250 MB simple-upload limit. Bodies above the cap throw - use `signedUploadUrl()` for chunked. User `metadata` and `cacheControl` throw - Graph drive items have no native arbitrary-metadata field; use `raw` to set Open Extensions if you need them."
+      ),
       spaces: ok,
       storj: ok,
       supabase: ok,
@@ -128,6 +140,10 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       box: warn(
         "Resolves the file ID, then fetches `getDownloadFileUrl` for both buffered and streaming reads - the SDK's native `downloadFile` returns a Node `Readable` that's awkward to expose isomorphically, so the adapter routes through standard HTTP, which gives a `ReadableStream` body."
       ),
+      "bun-s3": ok,
+      cloudinary: warn(
+        "No streaming primitive - the adapter fetches the delivery URL with `fetch()` to read bytes, so streamed downloads still buffer the body in memory. Metadata comes from a parallel `api.resource` call."
+      ),
       dropbox: warn(
         "`filesDownload` buffers the full body - the SDK has no streaming download primitive. For `as: 'stream'`, the adapter mints a temporary link and fetches it via standard HTTP, which exposes a `ReadableStream` body."
       ),
@@ -149,6 +165,7 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       "r2-hybrid": ok,
       s3: ok,
       scaleway: ok,
+      sharepoint: ok,
       spaces: ok,
       storj: ok,
       supabase: ok,
@@ -172,6 +189,8 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       azure: ok,
       b2: ok,
       box: ok,
+      "bun-s3": ok,
+      cloudinary: ok,
       dropbox: ok,
       exoscale: ok,
       filebase: ok,
@@ -191,6 +210,7 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       "r2-hybrid": ok,
       s3: ok,
       scaleway: ok,
+      sharepoint: ok,
       spaces: ok,
       storj: ok,
       supabase: ok,
@@ -215,6 +235,10 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       b2: ok,
       box: warn(
         "Returns immediate-children files only at `rootFolderId` - no recursion, and subfolders are filtered out. `prefix` is filename-prefix only (matched client-side within the page). Pagination uses Box's offset, encoded as a numeric cursor string."
+      ),
+      "bun-s3": ok,
+      cloudinary: warn(
+        "Page size clamped to 500 (Cloudinary Admin API ceiling). Resources are scoped by `resource_type` and `type` at adapter construction, so mixed-type buckets need separate adapters. Pagination uses Cloudinary's opaque `next_cursor`."
       ),
       dropbox: warn(
         "Recursive listing under `rootFolderPath` via `filesListFolder({ recursive: true })`; folder entries are filtered out. `prefix` is matched client-side within the returned page and can under-return when the prefix isn't satisfied within a single page. Pagination uses Dropbox's opaque cursor via `filesListFolderContinue`."
@@ -243,6 +267,9 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       "r2-hybrid": ok,
       s3: ok,
       scaleway: ok,
+      sharepoint: warn(
+        "Delegates to `onedrive`: returns immediate-children files only at `rootFolderPath` - no recursion, and subfolders are filtered out. `prefix` is filename-prefix only (matched client-side within the page). Pagination uses Graph's `@odata.nextLink` as the opaque cursor."
+      ),
       spaces: ok,
       storj: ok,
       supabase: warn(
@@ -274,6 +301,8 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       box: warn(
         "Box doesn't store user-supplied content types on file content - `head()` returns a type inferred from the filename extension (or `application/octet-stream` when unknown). `size`, `etag`, and `lastModified` come from `getFileById`."
       ),
+      "bun-s3": ok,
+      cloudinary: ok,
       dropbox: warn(
         "Dropbox doesn't store user-supplied content types - `filesUpload` accepts no Content-Type. `head()` returns a type inferred from the filename extension (or `application/octet-stream` when unknown). `etag` is Dropbox's `rev` field."
       ),
@@ -297,6 +326,7 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       "r2-hybrid": ok,
       s3: ok,
       scaleway: ok,
+      sharepoint: ok,
       spaces: ok,
       storj: ok,
       supabase: ok,
@@ -324,6 +354,8 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       azure: ok,
       b2: ok,
       box: ok,
+      "bun-s3": ok,
+      cloudinary: ok,
       dropbox: warn(
         "Resolves via `filesGetMetadata` and returns `false` for folder or deleted entries at the path - matches Dropbox's semantics where the same path can hold a folder or a tombstone. Only true file entries return `true`."
       ),
@@ -347,6 +379,7 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       "r2-hybrid": ok,
       s3: ok,
       scaleway: ok,
+      sharepoint: ok,
       spaces: ok,
       storj: ok,
       supabase: ok,
@@ -378,6 +411,12 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       ),
       b2: ok,
       box: ok,
+      "bun-s3": warn(
+        "Client-side stream copy - `Bun.S3Client` doesn't expose a server-side `CopyObject`, so the source is streamed through this process and re-uploaded. Doubled bandwidth, not atomic, and drops Content-Disposition/cache headers/user metadata/ACL (only Content-Type is preserved). Reach for `s3()` on the same bucket for server-side copy."
+      ),
+      cloudinary: warn(
+        "Re-upload by URL - Cloudinary has no native copy and `rename` is move-only. The adapter fetches the source delivery URL and ingests it as a new asset under `to`. Produces a new `asset_id`/`etag`, not a byte-identical reference. Costs an egress + an ingest; not atomic."
+      ),
       dropbox: ok,
       exoscale: ok,
       filebase: ok,
@@ -405,6 +444,9 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       ),
       s3: ok,
       scaleway: ok,
+      sharepoint: warn(
+        "Delegates to `onedrive`: async copy on Graph (`POST /items/{id}/copy` returns 202 + monitor URL). The adapter polls the monitor every 500 ms until status is `completed`/`failed`, capped by `copyTimeoutMs` (default 60_000). On timeout the call throws `Provider`; tune `copyTimeoutMs` for large files."
+      ),
       spaces: ok,
       storj: ok,
       supabase: ok,
@@ -438,6 +480,10 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       box: warn(
         "Default mints a signed download URL via `getDownloadFileUrl` - Box controls the TTL server-side, so `expiresIn` is accepted for API symmetry but is not honoured. With `publicByDefault: true`, `upload()` calls `addShareLinkToFile` (open access) and `url()` returns the link's `download_url`. With `publicBaseUrl`, returns `<publicBaseUrl>/<key>`. `responseContentDisposition` always throws - Box's URLs have no Content-Disposition override."
       ),
+      "bun-s3": ok,
+      cloudinary: warn(
+        "Public delivery URLs by default (`type: 'upload'`). For `private`/`authenticated` types, mints a signed delivery URL via `private_download_url` (requires `apiSecret` and the asset's stored format - costs a HEAD round-trip per call). `responseContentDisposition` always throws - Cloudinary has no per-request Content-Disposition override (drop to `raw` for the `attachment` flag)."
+      ),
       dropbox: warn(
         "Default mints a 4-hour temporary link via `filesGetTemporaryLink` - `expiresIn` is honored up to Dropbox's 14400s (4h) cap; values above throw. With `publicByDefault: true`, `upload()` creates a public shared link and `url()` returns it (rewritten to `?dl=1` for direct download). With `publicBaseUrl`, returns `<publicBaseUrl>/<key>`. `responseContentDisposition` always throws - Dropbox links have no Content-Disposition override."
       ),
@@ -469,6 +515,9 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       "r2-hybrid": ok,
       s3: ok,
       scaleway: ok,
+      sharepoint: warn(
+        "Delegates to `onedrive`: throws by default - Graph has no signed URL primitive. With `publicByDefault: true` at construction, `upload()` calls `createLink` (anonymous-view scope) and `url()` returns the share link's `webUrl`. The link is permanent (`expiresIn` ignored) and `responseContentDisposition` always throws. Anonymous links are blocked on tenants where admins disable them."
+      ),
       spaces: ok,
       storj: ok,
       supabase: warn(
@@ -508,6 +557,12 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       box: no(
         "Throws - Box uploads require a multipart POST with both an `attributes` JSON part and the file bytes part, which fits neither the SDK's PUT-with-headers nor S3-style POST-with-form-fields shape. Use `upload()` server-side, or Box's UI Elements / Content Uploader for browser flows."
       ),
+      "bun-s3": warn(
+        "PUT URL only - Bun exposes presigned URLs, not S3 POST policy fields, so `maxSize` throws (no `content-length-range` policy). Enforce upload caps at your application gateway instead."
+      ),
+      cloudinary: warn(
+        "Form-POST shape with `fields` (`method: 'POST'`), not a single presigned PUT URL - signs Cloudinary's `api_sign_request` payload. Requires `apiSecret`. `maxSize` and `minSize` aren't enforced server-side - use an upload preset with `max_file_size` if you need a cap. `expiresIn` is informational - Cloudinary signatures are fixed at 1h."
+      ),
       dropbox: no(
         "Throws - Dropbox's `filesGetTemporaryUploadLink` returns a URL that expects POST with a raw body, which fits neither the SDK's PUT-with-headers nor POST-with-form-fields shape. Use `upload()` or drop to `raw.filesGetTemporaryUploadLink(...)` for client-side uploads."
       ),
@@ -539,6 +594,9 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       "r2-hybrid": ok,
       s3: ok,
       scaleway: ok,
+      sharepoint: warn(
+        "Delegates to `onedrive`: initiates a Graph upload session via `POST /createUploadSession` and returns the session URL as a one-shot PUT (the session URL is pre-authenticated by Graph itself). `maxSize` and `minSize` are advisory - Graph does not enforce a server-side `content-length-range` policy on upload sessions; clients can still chunk via `Content-Range` to the same URL."
+      ),
       spaces: ok,
       storj: ok,
       supabase: warn(
