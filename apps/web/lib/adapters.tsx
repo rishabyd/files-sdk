@@ -1,6 +1,7 @@
 import type { ComponentType } from "react";
 
 import { Akamai } from "@/components/sections/adapters/akamai";
+import { Alibaba } from "@/components/sections/adapters/alibaba";
 import { Appwrite } from "@/components/sections/adapters/appwrite";
 import { Azure } from "@/components/sections/adapters/azure";
 import { BackblazeB2 } from "@/components/sections/adapters/backblaze-b2";
@@ -27,11 +28,13 @@ import { Scaleway } from "@/components/sections/adapters/scaleway";
 import { Sharepoint } from "@/components/sections/adapters/sharepoint";
 import { Storj } from "@/components/sections/adapters/storj";
 import { Supabase } from "@/components/sections/adapters/supabase";
+import { Tencent } from "@/components/sections/adapters/tencent";
 import { Tigris } from "@/components/sections/adapters/tigris";
 import { Uploadthing } from "@/components/sections/adapters/uploadthing";
 import { VercelBlob } from "@/components/sections/adapters/vercel-blob";
 import { Vultr } from "@/components/sections/adapters/vultr";
 import { Wasabi } from "@/components/sections/adapters/wasabi";
+import { Yandex } from "@/components/sections/adapters/yandex";
 import type { TocSection } from "@/components/table-of-contents";
 
 export interface Adapter {
@@ -199,12 +202,36 @@ export const ADAPTERS: Adapter[] = [
     slug: "ibm-cos",
   },
   {
+    Component: Tencent,
+    description:
+      "Tencent Cloud Object Storage (COS) via the S3-compatible API. Endpoint derived from the region code; bucket name must include the -<appid> suffix.",
+    name: "Tencent Cloud Object Storage",
+    sections: [OPTIONS],
+    slug: "tencent",
+  },
+  {
+    Component: Alibaba,
+    description:
+      "Alibaba Cloud Object Storage Service (OSS) via the S3-compatible API. Endpoint derived from the region code (cn-hangzhou, ap-southeast-1, ...).",
+    name: "Alibaba Cloud OSS",
+    sections: [OPTIONS],
+    slug: "alibaba",
+  },
+  {
     Component: Tigris,
     description:
       "Tigris globally-distributed object storage via the S3-compatible API. Fixed global endpoint, region defaults to auto.",
     name: "Tigris",
     sections: [OPTIONS],
     slug: "tigris",
+  },
+  {
+    Component: Yandex,
+    description:
+      "Yandex Object Storage via the S3-compatible API. Fixed global endpoint, region defaults to ru-central1.",
+    name: "Yandex Object Storage",
+    sections: [OPTIONS],
+    slug: "yandex",
   },
   {
     Component: Gcs,

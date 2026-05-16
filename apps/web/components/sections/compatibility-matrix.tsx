@@ -46,7 +46,10 @@ const ADAPTERS = [
   { key: "exoscale", label: "Exoscale", parent: "Exoscale" },
   { key: "oracle-cloud", label: "Oracle Cloud", parent: "Oracle Cloud" },
   { key: "ibm-cos", label: "IBM COS", parent: "IBM COS" },
+  { key: "tencent", label: "Tencent COS", parent: "Tencent COS" },
+  { key: "alibaba", label: "Alibaba OSS", parent: "Alibaba OSS" },
   { key: "tigris", label: "Tigris", parent: "Tigris" },
+  { key: "yandex", label: "Yandex", parent: "Yandex Object Storage" },
   { key: "gcs", label: "GCS", parent: "GCS" },
   { key: "google-drive", label: "Google Drive", parent: "Google Drive" },
   { key: "onedrive", label: "OneDrive", parent: "OneDrive" },
@@ -66,6 +69,7 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
   {
     cells: {
       akamai: ok,
+      alibaba: ok,
       appwrite: warn(
         "Stream bodies are buffered up-front - `InputFile.fromBuffer` has no streaming form, so streamed uploads can't avoid materializing the body in memory. User `metadata` and `cacheControl` throw - Appwrite's `createFile` has no equivalent fields. `contentType` is silently ignored - Appwrite auto-detects mime from the payload and has no override."
       ),
@@ -102,6 +106,7 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       spaces: ok,
       storj: ok,
       supabase: ok,
+      tencent: ok,
       tigris: ok,
       "ut-private": ok,
       "ut-public": ok,
@@ -109,12 +114,14 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       "vb-public": ok,
       vultr: ok,
       wasabi: ok,
+      yandex: ok,
     },
     method: "upload",
   },
   {
     cells: {
       akamai: ok,
+      alibaba: ok,
       appwrite: ok,
       azure: ok,
       b2: ok,
@@ -145,6 +152,7 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       spaces: ok,
       storj: ok,
       supabase: ok,
+      tencent: ok,
       tigris: ok,
       "ut-private": ok,
       "ut-public": ok,
@@ -152,12 +160,14 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       "vb-public": ok,
       vultr: ok,
       wasabi: ok,
+      yandex: ok,
     },
     method: "download",
   },
   {
     cells: {
       akamai: ok,
+      alibaba: ok,
       appwrite: ok,
       azure: ok,
       b2: ok,
@@ -184,6 +194,7 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       spaces: ok,
       storj: ok,
       supabase: ok,
+      tencent: ok,
       tigris: ok,
       "ut-private": ok,
       "ut-public": ok,
@@ -191,12 +202,14 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       "vb-public": ok,
       vultr: ok,
       wasabi: ok,
+      yandex: ok,
     },
     method: "delete",
   },
   {
     cells: {
       akamai: ok,
+      alibaba: ok,
       appwrite: ok,
       azure: ok,
       b2: ok,
@@ -235,6 +248,7 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       supabase: warn(
         "Supabase's stable list API is offset/limit, not cursor-based. The adapter encodes the next offset as a numeric cursor string so the unified API works unchanged - the cursor is opaque to callers but is just `String(offset + page)` underneath."
       ),
+      tencent: ok,
       tigris: ok,
       "ut-private": warn(
         "UploadThing's listFiles is offset/limit, not cursor-based - the adapter encodes the next offset as a numeric cursor. `prefix` is unsupported server-side; the adapter filters the returned page client-side, which under-returns when the prefix isn't satisfied within a single page."
@@ -246,12 +260,14 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       "vb-public": ok,
       vultr: ok,
       wasabi: ok,
+      yandex: ok,
     },
     method: "list",
   },
   {
     cells: {
       akamai: ok,
+      alibaba: ok,
       appwrite: ok,
       azure: ok,
       b2: ok,
@@ -284,6 +300,7 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       spaces: ok,
       storj: ok,
       supabase: ok,
+      tencent: ok,
       tigris: ok,
       "ut-private": warn(
         "UploadThing has no metadata endpoint, so `head()` issues a HEAD request against the resolved file URL (signed for private, CDN for public) and parses size/content-type/etag/last-modified from the response headers. User `metadata` isn't supported."
@@ -295,12 +312,14 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       "vb-public": ok,
       vultr: ok,
       wasabi: ok,
+      yandex: ok,
     },
     method: "head",
   },
   {
     cells: {
       akamai: ok,
+      alibaba: ok,
       appwrite: ok,
       azure: ok,
       b2: ok,
@@ -331,6 +350,7 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       spaces: ok,
       storj: ok,
       supabase: ok,
+      tencent: ok,
       tigris: ok,
       "ut-private": warn(
         "UploadThing has no metadata endpoint, so `exists()` issues a HEAD request against the resolved file URL (signed for private, CDN for public) and treats `404` as `false`."
@@ -342,12 +362,14 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       "vb-public": ok,
       vultr: ok,
       wasabi: ok,
+      yandex: ok,
     },
     method: "exists",
   },
   {
     cells: {
       akamai: ok,
+      alibaba: ok,
       appwrite: warn(
         "Read-then-write - Appwrite has no server-side copy primitive, so the source is downloaded and re-uploaded. Costs an egress + an ingest; not atomic."
       ),
@@ -386,6 +408,7 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       spaces: ok,
       storj: ok,
       supabase: ok,
+      tencent: ok,
       tigris: ok,
       "ut-private": warn(
         "Read-then-write - UploadThing has no server-side copy primitive, so the source is downloaded and re-uploaded. Costs an egress + an ingest; not atomic."
@@ -397,12 +420,14 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       "vb-public": ok,
       vultr: ok,
       wasabi: ok,
+      yandex: ok,
     },
     method: "copy",
   },
   {
     cells: {
       akamai: ok,
+      alibaba: ok,
       appwrite: warn(
         "Throws by default because Appwrite SDKs cannot mint presigned reading URLs with keys. Set `public: true` at construction to return the constructed Appwrite public CDN URL. `expiresIn` and `responseContentDisposition` are ignored."
       ),
@@ -449,6 +474,7 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       supabase: warn(
         "Default mints a signed read URL via `createSignedUrl` (1-hour default). With `public: true`, returns the permanent unsigned `getPublicUrl` result. With `publicBaseUrl`, returns `<publicBaseUrl>/<key>`. `responseContentDisposition` is honored - it threads through Supabase's `download` option in the signed path."
       ),
+      tencent: ok,
       tigris: ok,
       "ut-private": warn(
         "Mints a signed read URL via `generateSignedURL` (1-hour default). `responseContentDisposition` throws - UploadThing has no Content-Disposition override on signed or CDN URLs."
@@ -464,12 +490,14 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       ),
       vultr: ok,
       wasabi: ok,
+      yandex: ok,
     },
     method: "url",
   },
   {
     cells: {
       akamai: ok,
+      alibaba: ok,
       appwrite: no(
         "No presigned upload primitive in Appwrite. Use JWTs or client SDKs for direct uploads."
       ),
@@ -516,6 +544,7 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       supabase: warn(
         "PUT URL only - Supabase has no POST policy equivalent. `maxSize` throws (Supabase signed upload URLs have no `content-length-range` policy; set the bucket-level size limit in the dashboard instead). `expiresIn` is silently ignored - Supabase fixes the TTL at 2 hours server-side. The returned headers include `x-upsert: true`."
       ),
+      tencent: ok,
       tigris: ok,
       "ut-private": warn(
         "PUT URL only - built against UploadThing's UFS ingest endpoint with an HMAC-SHA256 signature over the URL. `maxSize` is advisory: UploadThing enforces upload caps via the file-router config tied to the adapter's `slug`, not via the URL signature. `minSize` is ignored (no equivalent on UFS). The user-supplied key is bound as `x-ut-custom-id` so subsequent ops can route by it."
@@ -531,6 +560,7 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       ),
       vultr: ok,
       wasabi: ok,
+      yandex: ok,
     },
     method: "signedUploadUrl",
   },

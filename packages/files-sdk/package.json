@@ -109,6 +109,18 @@
       "types": "./dist/tigris/index.d.ts",
       "import": "./dist/tigris/index.js"
     },
+    "./tencent": {
+      "types": "./dist/tencent/index.d.ts",
+      "import": "./dist/tencent/index.js"
+    },
+    "./alibaba": {
+      "types": "./dist/alibaba/index.d.ts",
+      "import": "./dist/alibaba/index.js"
+    },
+    "./yandex": {
+      "types": "./dist/yandex/index.d.ts",
+      "import": "./dist/yandex/index.js"
+    },
     "./gcs": {
       "types": "./dist/gcs/index.d.ts",
       "import": "./dist/gcs/index.js"
