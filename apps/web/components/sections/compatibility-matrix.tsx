@@ -24,8 +24,8 @@ const warn = (note: string): Cell => ({ note, status: "warn" });
 const no = (note: string): Cell => ({ note, status: "no" });
 
 const ADAPTERS = [
-  { key: "s3", label: "AWS SDK", parent: "S3" },
-  { key: "bun-s3", label: "Bun", parent: "S3" },
+  { key: "s3", label: "AWS S3", parent: "AWS S3" },
+  { key: "bun-s3", label: "Bun S3", parent: "Bun S3" },
   { key: "r2-http", label: "HTTP", parent: "Cloudflare R2" },
   { key: "r2-binding", label: "binding", parent: "Cloudflare R2" },
   { key: "r2-hybrid", label: "hybrid", parent: "Cloudflare R2" },
@@ -37,7 +37,7 @@ const ADAPTERS = [
   { key: "storj", label: "Storj", parent: "Storj" },
   { key: "hetzner", label: "Hetzner", parent: "Hetzner" },
   { key: "akamai", label: "Akamai", parent: "Akamai" },
-  { key: "bunny", label: "Bunny", parent: "Bunny Storage" },
+  { key: "bunny", label: "Bunny Storage", parent: "Bunny Storage" },
   { key: "b2", label: "Backblaze B2", parent: "Backblaze B2" },
   { key: "wasabi", label: "Wasabi", parent: "Wasabi" },
   { key: "scaleway", label: "Scaleway", parent: "Scaleway" },
@@ -51,7 +51,11 @@ const ADAPTERS = [
   { key: "tencent", label: "Tencent COS", parent: "Tencent COS" },
   { key: "alibaba", label: "Alibaba OSS", parent: "Alibaba OSS" },
   { key: "tigris", label: "Tigris", parent: "Tigris" },
-  { key: "yandex", label: "Yandex", parent: "Yandex Object Storage" },
+  {
+    key: "yandex",
+    label: "Yandex Object Storage",
+    parent: "Yandex Object Storage",
+  },
   { key: "gcs", label: "GCS", parent: "GCS" },
   { key: "google-drive", label: "Google Drive", parent: "Google Drive" },
   { key: "onedrive", label: "OneDrive", parent: "OneDrive" },
@@ -60,14 +64,24 @@ const ADAPTERS = [
   { key: "box", label: "Box", parent: "Box" },
   { key: "azure", label: "Azure", parent: "Azure" },
   { key: "supabase", label: "Supabase", parent: "Supabase" },
-  { key: "ut-public", label: "public", parent: "UploadThing" },
-  { key: "ut-private", label: "private", parent: "UploadThing" },
+  { key: "ut", label: "UploadThing", parent: "UploadThing" },
   { key: "cloudinary", label: "Cloudinary", parent: "Cloudinary" },
   { key: "fs", label: "Filesystem", parent: "Filesystem" },
   { key: "appwrite", label: "Appwrite", parent: "Appwrite" },
 ] as const;
 
 type AdapterKey = (typeof ADAPTERS)[number]["key"];
+type AdapterEntry = (typeof ADAPTERS)[number];
+
+const ADAPTER_GROUPS: { parent: string; variants: AdapterEntry[] }[] = [];
+for (const adapter of ADAPTERS) {
+  const last = ADAPTER_GROUPS.at(-1);
+  if (last && last.parent === adapter.parent) {
+    last.variants.push(adapter);
+  } else {
+    ADAPTER_GROUPS.push({ parent: adapter.parent, variants: [adapter] });
+  }
+}
 
 const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
   {
@@ -124,8 +138,7 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       supabase: ok,
       tencent: ok,
       tigris: ok,
-      "ut-private": ok,
-      "ut-public": ok,
+      ut: ok,
       "vb-private": ok,
       "vb-public": ok,
       vultr: ok,
@@ -176,8 +189,7 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       supabase: ok,
       tencent: ok,
       tigris: ok,
-      "ut-private": ok,
-      "ut-public": ok,
+      ut: ok,
       "vb-private": ok,
       "vb-public": ok,
       vultr: ok,
@@ -222,8 +234,7 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       supabase: ok,
       tencent: ok,
       tigris: ok,
-      "ut-private": ok,
-      "ut-public": ok,
+      ut: ok,
       "vb-private": ok,
       "vb-public": ok,
       vultr: ok,
@@ -286,10 +297,7 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       ),
       tencent: ok,
       tigris: ok,
-      "ut-private": warn(
-        "UploadThing's listFiles is offset/limit, not cursor-based - the adapter encodes the next offset as a numeric cursor. `prefix` is unsupported server-side; the adapter filters the returned page client-side, which under-returns when the prefix isn't satisfied within a single page."
-      ),
-      "ut-public": warn(
+      ut: warn(
         "UploadThing's listFiles is offset/limit, not cursor-based - the adapter encodes the next offset as a numeric cursor. `prefix` is unsupported server-side; the adapter filters the returned page client-side, which under-returns when the prefix isn't satisfied within a single page."
       ),
       "vb-private": ok,
@@ -342,10 +350,7 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       supabase: ok,
       tencent: ok,
       tigris: ok,
-      "ut-private": warn(
-        "UploadThing has no metadata endpoint, so `head()` issues a HEAD request against the resolved file URL (signed for private, CDN for public) and parses size/content-type/etag/last-modified from the response headers. User `metadata` isn't supported."
-      ),
-      "ut-public": warn(
+      ut: warn(
         "UploadThing has no metadata endpoint, so `head()` issues a HEAD request against the resolved file URL (signed for private, CDN for public) and parses size/content-type/etag/last-modified from the response headers. User `metadata` isn't supported."
       ),
       "vb-private": ok,
@@ -396,10 +401,7 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       supabase: ok,
       tencent: ok,
       tigris: ok,
-      "ut-private": warn(
-        "UploadThing has no metadata endpoint, so `exists()` issues a HEAD request against the resolved file URL (signed for private, CDN for public) and treats `404` as `false`."
-      ),
-      "ut-public": warn(
+      ut: warn(
         "UploadThing has no metadata endpoint, so `exists()` issues a HEAD request against the resolved file URL (signed for private, CDN for public) and treats `404` as `false`."
       ),
       "vb-private": ok,
@@ -466,10 +468,7 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       supabase: ok,
       tencent: ok,
       tigris: ok,
-      "ut-private": warn(
-        "Read-then-write - UploadThing has no server-side copy primitive, so the source is downloaded and re-uploaded. Costs an egress + an ingest; not atomic."
-      ),
-      "ut-public": warn(
+      ut: warn(
         "Read-then-write - UploadThing has no server-side copy primitive, so the source is downloaded and re-uploaded. Costs an egress + an ingest; not atomic."
       ),
       "vb-private": ok,
@@ -542,11 +541,8 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       ),
       tencent: ok,
       tigris: ok,
-      "ut-private": warn(
-        "Mints a signed read URL via `generateSignedURL` (1-hour default). `responseContentDisposition` throws - UploadThing has no Content-Disposition override on signed or CDN URLs."
-      ),
-      "ut-public": warn(
-        "Returns the permanent CDN URL `https://{appId}.ufs.sh/f/{key}`. `expiresIn` is silently ignored (no signing). `responseContentDisposition` throws - UploadThing has no Content-Disposition override. Use a private adapter or a different provider for buckets with untrusted user-uploaded content."
+      ut: warn(
+        "Public adapters return the permanent CDN URL `https://{appId}.ufs.sh/f/{key}` and silently ignore `expiresIn`. Private adapters mint a signed read URL via `generateSignedURL` (1-hour default). `responseContentDisposition` throws either way - UploadThing has no Content-Disposition override on signed or CDN URLs. Use a private adapter for buckets with untrusted user-uploaded content."
       ),
       "vb-private": no(
         "No URL primitive for private blobs - the underlying SDK requires an authenticated `blob.get()` call with the token. Use `download()` instead, or instantiate a second public-access adapter."
@@ -624,10 +620,7 @@ const ROWS: { method: string; cells: Record<AdapterKey, Cell> }[] = [
       ),
       tencent: ok,
       tigris: ok,
-      "ut-private": warn(
-        "PUT URL only - built against UploadThing's UFS ingest endpoint with an HMAC-SHA256 signature over the URL. `maxSize` is advisory: UploadThing enforces upload caps via the file-router config tied to the adapter's `slug`, not via the URL signature. `minSize` is ignored (no equivalent on UFS). The user-supplied key is bound as `x-ut-custom-id` so subsequent ops can route by it."
-      ),
-      "ut-public": warn(
+      ut: warn(
         "PUT URL only - built against UploadThing's UFS ingest endpoint with an HMAC-SHA256 signature over the URL. `maxSize` is advisory: UploadThing enforces upload caps via the file-router config tied to the adapter's `slug`, not via the URL signature. `minSize` is ignored (no equivalent on UFS). The user-supplied key is bound as `x-ut-custom-id` so subsequent ops can route by it."
       ),
       "vb-private": no(
@@ -705,7 +698,10 @@ export const CompatibilityMatrix = () => (
         <table className="w-full border-collapse text-xs">
           <thead>
             <tr className="border-b border-dotted">
-              <th className="px-3 py-2 text-left font-medium text-muted-foreground">
+              <th
+                className="px-3 py-2 text-left font-medium text-muted-foreground"
+                colSpan={2}
+              >
                 Adapter
               </th>
               {ROWS.map((row) => (
@@ -719,31 +715,42 @@ export const CompatibilityMatrix = () => (
             </tr>
           </thead>
           <tbody>
-            {ADAPTERS.map((adapter) => {
-              const sameAsParent = adapter.parent === adapter.label;
-              return (
-                <tr
-                  className="border-b border-dotted last:border-b-0"
-                  key={adapter.key}
-                >
-                  <th className="px-3 py-2 text-left font-normal whitespace-nowrap align-top">
-                    <div className="font-medium text-foreground">
-                      {adapter.parent}
-                    </div>
-                    {!sameAsParent && (
-                      <div className="text-muted-foreground">
-                        {adapter.label}
-                      </div>
+            {ADAPTER_GROUPS.map((group) =>
+              group.variants.map((adapter, i) => {
+                const isFirstInGroup = i === 0;
+                const isLastInGroup = i === group.variants.length - 1;
+                const isSingle = group.variants.length === 1;
+                return (
+                  <tr
+                    className={cn(
+                      "border-dotted",
+                      isLastInGroup && "border-b last:border-b-0"
                     )}
-                  </th>
-                  {ROWS.map((row) => (
-                    <td className="px-2 py-2 text-center" key={row.method}>
-                      <StatusIcon cell={row.cells[adapter.key]} />
-                    </td>
-                  ))}
-                </tr>
-              );
-            })}
+                    key={adapter.key}
+                  >
+                    {isFirstInGroup && (
+                      <th
+                        className="px-3 py-2 text-left font-medium text-foreground whitespace-nowrap align-top"
+                        colSpan={isSingle ? 2 : 1}
+                        rowSpan={group.variants.length}
+                      >
+                        {group.parent}
+                      </th>
+                    )}
+                    {!isSingle && (
+                      <th className="pr-3 py-2 text-left font-normal text-muted-foreground whitespace-nowrap align-top">
+                        {adapter.label}
+                      </th>
+                    )}
+                    {ROWS.map((row) => (
+                      <td className="px-2 py-2 text-center" key={row.method}>
+                        <StatusIcon cell={row.cells[adapter.key]} />
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>
