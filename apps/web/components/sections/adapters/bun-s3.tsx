@@ -20,9 +20,6 @@ new Files({ adapter: bunS3({ client: Bun.s3 }) });`;
 
 export const BunS3 = () => (
   <section>
-    <Heading as="h2" id="adapter-bun-s3">
-      Bun S3
-    </Heading>
     <p>
       AWS S3 (and any S3-compatible bucket) via Bun&apos;s native{" "}
       <code>Bun.S3Client</code> instead of <code>@aws-sdk/client-s3</code>.
@@ -42,8 +39,8 @@ export const BunS3 = () => (
       <code>files-sdk/s3</code> on the same bucket when you need any of those.
     </p>
     <CodeBlock code={BUN_S3_EXAMPLE} lang="ts" />
-    <div className="flex flex-col gap-2">
-      <Heading as="h3" id="adapter-bun-s3-options">
+    <section>
+      <Heading as="h2" id="options">
         Options
       </Heading>
       <Accordion className="rounded-md border-dotted" type="multiple">
@@ -134,6 +131,6 @@ export const BunS3 = () => (
           </p>
         </PropAccordionItem>
       </Accordion>
-    </div>
+    </section>
   </section>
 );

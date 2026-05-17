@@ -186,7 +186,14 @@ export const Cli = () => (
       <p>
         Adapter SDKs (AWS, GCP, Azure, Dropbox, etc.) are loaded lazily on first
         use, so cold-start cost matches whichever single provider you select —
-        not the union of all of them.
+        not the union of all of them. Those SDKs are optional peer dependencies
+        of <code>files-sdk</code>, so install the one for the provider you
+        intend to use alongside the CLI — for example{" "}
+        <code>
+          npm install -g files-sdk @aws-sdk/client-s3 @aws-sdk/s3-presigned-post
+          @aws-sdk/s3-request-presigner
+        </code>{" "}
+        for S3. See the per-adapter docs for the exact package list.
       </p>
     </section>
 

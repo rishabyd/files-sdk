@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { AdapterInstallation } from "@/components/adapter-installation";
 import { FadeIn } from "@/components/fade-in";
 import { PageHero } from "@/components/sections/page-hero";
 import { ADAPTERS, getAdapter } from "@/lib/adapters";
@@ -38,12 +39,13 @@ const AdapterPage = async ({ params }: AdapterPageProps) => {
     notFound();
   }
 
-  const { Component, name, description } = adapter;
+  const { Component, name, description, peerDeps } = adapter;
 
   return (
     <>
       <PageHero description={description} title={name} />
-      <FadeIn>
+      <FadeIn className="flex flex-col gap-8">
+        <AdapterInstallation peerDeps={peerDeps} />
         <Component />
       </FadeIn>
     </>
